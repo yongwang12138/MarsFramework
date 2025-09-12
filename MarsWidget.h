@@ -29,11 +29,6 @@ private:
     QVBoxLayout* _layout {nullptr};
     MarsTitleBar* _titleBar {nullptr};
     QWidget* _contentWidget {nullptr};
-
-#ifdef Q_OS_WIN
-    // Windows 原生事件处理
-    void updateWindowStyle();
-#endif
 };
 
 #endif // MARSWIDGET_H

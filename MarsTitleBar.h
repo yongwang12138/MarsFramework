@@ -5,8 +5,8 @@
 #include <QLabel>
 #include <QToolButton>
 
-// 命中测试结果枚举
-enum class HitTestResult {
+// 命中区域枚举
+enum class HitArea {
     None,           // 未命中
     TitleBar,       // 命中标题栏
     MinimizeButton, // 命中最小化按钮
@@ -38,12 +38,11 @@ public:
     // 更新(最大化/恢复)图标
     void updateMaximizeIcon();
 
-    // 命中测试方法
-    HitTestResult hitTest(const QPoint& globalPos) const;
-
 #ifdef Q_OS_WIN
     // Windows 原生事件处理
     bool takeOverNativeEvent(MSG* msg, qintptr* result);
+    // 初始化窗口样式
+    void initWindowStyle(HWND hwnd);
 #endif
 
 protected:
@@ -57,7 +56,8 @@ private slots:
 
 private:
     void setupUi();
-    bool isPointInButton(const QPoint& point, QToolButton* button) const;
+    // 获取命中区域
+    HitArea getHitArea(const QPoint& localPos) const;
 
 signals:
     void minimizeClicked();

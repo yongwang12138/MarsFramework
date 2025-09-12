@@ -84,7 +84,8 @@ void MarsWidget::showEvent(QShowEvent* event)
 {
     Q_UNUSED(event);
 #ifdef Q_OS_WIN
-    updateWindowStyle();
+    // 调用标题栏的 initWindowStyle 方法
+    _titleBar->initWindowStyle(reinterpret_cast<HWND>(winId()));
 #endif
 }
 
@@ -100,44 +101,3 @@ void MarsWidget::changeEvent(QEvent* event)
     }
     QWidget::changeEvent(event);
 }
-
-#ifdef Q_OS_WIN
-void MarsWidget::updateWindowStyle()
-{
-    HWND hwnd = reinterpret_cast<HWND>(winId());
-
-    // 获取当前样式
-    LONG style = GetWindowLong(hwnd, GWL_STYLE);
-
-    if (!isMaximized()) {
-        // 启用调整大小
-        style |= WS_THICKFRAME | WS_MAXIMIZEBOX;
-    } else {
-        // 禁用调整大小
-        style &= ~(WS_THICKFRAME | WS_MAXIMIZEBOX);
-    }
-
-    SetWindowLong(hwnd, GWL_STYLE, style);
-
-    // 更新窗口
-    SetWindowPos(hwnd, NULL, 0, 0, 0, 0,
-                 SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOOWNERZORDER);
-
-    // 启用阴影效果
-    BOOL compositionEnabled = FALSE;
-    HRESULT hr = DwmIsCompositionEnabled(&compositionEnabled);
-    if (SUCCEEDED(hr) && compositionEnabled) {
-        // 设置默认阴影
-        const MARGINS shadow = { 1, 1, 1, 1 };
-        DwmExtendFrameIntoClientArea(hwnd, &shadow);
-
-        // 启用窗口阴影
-        DWMNCRENDERINGPOLICY policy = DWMNCRP_ENABLED;
-        DwmSetWindowAttribute(hwnd, DWMWA_NCRENDERING_POLICY, &policy, sizeof(policy));
-
-        // 启用非客户区渲染
-        BOOL enableNcRender = TRUE;
-        DwmSetWindowAttribute(hwnd, DWMWA_ALLOW_NCPAINT, &enableNcRender, sizeof(enableNcRender));
-    }
-}
-#endif

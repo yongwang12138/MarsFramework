@@ -57,21 +57,31 @@ void MarsTitleBar::setupUi()
     _layout->addWidget(_closeButton);
 }
 
-bool MarsTitleBar::isPointInButton(const QPoint &point, QToolButton *button) const
+HitArea MarsTitleBar::getHitArea(const QPoint &localPos) const
 {
-    if (!button || !button->isVisible()) {
-        return false;
+    // 检查是否在标题栏范围内
+    if (!rect().contains(localPos)) {
+        return HitArea::None;
     }
 
-    // 获取按钮在标题栏中的几何区域（逻辑坐标）
-    QRect buttonRect = button->geometry();
+    // 检查是否在按钮上
+    if (_minimizeButton && _minimizeButton->isVisible() &&
+        _minimizeButton->geometry().contains(localPos)) {
+        return HitArea::MinimizeButton;
+    }
 
-    // 添加一些容差，确保按钮边缘也能被检测到
-    int tolerance = 2; // 2像素的容差（逻辑像素）
-    QRect expandedRect = buttonRect.adjusted(-tolerance, -tolerance, tolerance, tolerance);
+    if (_maximizeButton && _maximizeButton->isVisible() &&
+        _maximizeButton->geometry().contains(localPos)) {
+        return HitArea::MaximizeButton;
+    }
 
-    // 检查点是否在按钮区域内（带容差）
-    return expandedRect.contains(point);
+    if (_closeButton && _closeButton->isVisible() &&
+        _closeButton->geometry().contains(localPos)) {
+        return HitArea::CloseButton;
+    }
+
+    // 在标题栏内但不在按钮上
+    return HitArea::TitleBar;
 }
 
 void MarsTitleBar::setTitle(const QString& title)
@@ -156,36 +166,7 @@ void MarsTitleBar::updateMaximizeIcon()
     }
 }
 
-HitTestResult MarsTitleBar::hitTest(const QPoint &globalPos) const
-{
-    // 将全局坐标转换为标题栏的局部坐标
-    QPoint localPos = mapFromGlobal(globalPos);
-
-    // 检查是否在标题栏范围内
-    if (!rect().contains(localPos)) {
-        return HitTestResult::None;
-    }
-
-    // 检查是否在按钮上
-    if (_minimizeButton && _minimizeButton->isVisible() &&
-        _minimizeButton->geometry().contains(localPos)) {
-        return HitTestResult::MinimizeButton;
-    }
-
-    if (_maximizeButton && _maximizeButton->isVisible() &&
-        _maximizeButton->geometry().contains(localPos)) {
-        return HitTestResult::MaximizeButton;
-    }
-
-    if (_closeButton && _closeButton->isVisible() &&
-        _closeButton->geometry().contains(localPos)) {
-        return HitTestResult::CloseButton;
-    }
-
-    // 在标题栏内但不在按钮上
-    return HitTestResult::TitleBar;
-}
-
+#ifdef Q_OS_WIN
 bool MarsTitleBar::takeOverNativeEvent(MSG *msg, qintptr *result)
 {
     if (!msg || !msg->hwnd) {
@@ -210,8 +191,8 @@ bool MarsTitleBar::takeOverNativeEvent(MSG *msg, qintptr *result)
     /* 判断鼠标在窗口上的位置 返回相应的 "命中测试结果" */
     case WM_NCHITTEST: {
         /// 返回 HTCAPTION（标题栏），系统会允许拖动窗口
-        /// 返回 HTLEFT（左边界），系统会允许拖动调整窗口宽度
         /// 返回 HTCLIENT（客户区），则由程序自己处理（如鼠标点击事件）
+        /// 返回 HTLEFT（左边界），系统会允许拖动调整窗口宽度
 
         // 从 lParam 中提取鼠标全局坐标（屏幕坐标）
         const POINT pt = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
@@ -224,8 +205,10 @@ bool MarsTitleBar::takeOverNativeEvent(MSG *msg, qintptr *result)
         const int x = pt.x - rect.left;
         const int y = pt.y - rect.top;
 
+        // 检查窗口是否最大化
+        bool isMaximized = parentWidget() && parentWidget()->isMaximized();
         /// 实现 “鼠标放在窗口边缘时，可拖动调整窗口大小”，模拟系统默认窗口的边框拖动功能。
-        if (!isMaximized()) {
+        if (!isMaximized) {
             const int borderWidth = 12;
             bool left = x < borderWidth;
             bool right = x > (rect.right - rect.left - borderWidth);
@@ -267,32 +250,27 @@ bool MarsTitleBar::takeOverNativeEvent(MSG *msg, qintptr *result)
         /// 检查是否在标题栏区域
         if (logicalY  < height() && x > 0 && x < (rect.right - rect.left)) {
             QPoint localPos(static_cast<int>(x / dpiScale), logicalY);
-            // 检查是否在按钮上
-            bool onMinimizeButton = isPointInButton(localPos, minimizeButton());
-            bool onMaximizeButton = isPointInButton(localPos, maximizeButton());
-            bool onCloseButton = isPointInButton(localPos, closeButton());
 
-            // 如果在最大化按钮上，返回 HTMAXBUTTON 以启用 Aero Snap
-            if (onMaximizeButton) {
+            // 使用 hitTest 函数进行命中测试
+            HitArea hitResult = getHitArea(localPos);
+
+            switch (hitResult) {
+            case HitArea::MaximizeButton:
+                // 如果在最大化按钮上，返回 HTMAXBUTTON 以启用 Aero Snap
                 // *result = HTMAXBUTTON; // 或 HTZOOM，两者值相同
+                *result = HTCLIENT;  // 返回 HTCLIENT 让 Qt 处理按钮点击
+                return true;
+            case HitArea::MinimizeButton:
+            case HitArea::CloseButton:
                 *result = HTCLIENT;
                 return true;
-            }
-
-            // 如果在最小化或关闭按钮上
-            if (onMinimizeButton || onCloseButton) {
-                *result = HTCLIENT;
+            case HitArea::TitleBar:
+                /// 在最大化状态下 也允许整个标题栏区域用于拖动
+                *result = HTCAPTION;  // 不是按钮：按标题栏处理（允许拖动窗口）
                 return true;
+            default:
+                break;
             }
-
-            /// 在最大化状态下，允许整个标题栏区域用于拖动
-            if (isMaximized()) {
-                *result = HTCAPTION;
-                return true;
-            }
-
-            *result = HTCAPTION; // 不是子控件：按标题栏处理（允许拖动窗口）
-            return true;
         }
 
         *result = HTCLIENT; // 所有区域都按客户区处理（不允许调整边框）
@@ -313,10 +291,21 @@ bool MarsTitleBar::takeOverNativeEvent(MSG *msg, qintptr *result)
         minMaxInfo->ptMaxTrackSize.x = workArea.right - workArea.left;
         minMaxInfo->ptMaxTrackSize.y = workArea.bottom - workArea.top;
 
+        // 设置最小窗口尺寸
+        if (parentWidget()) {
+            QSize minSize = parentWidget()->minimumSize();
+            if (minSize.isValid()) {
+                // 转换为屏幕坐标（需要考虑 DPI 缩放）
+                qreal dpiScale = devicePixelRatioF();
+                minMaxInfo->ptMinTrackSize.x = static_cast<LONG>(minSize.width() * dpiScale);
+                minMaxInfo->ptMinTrackSize.y = static_cast<LONG>(minSize.height() * dpiScale);
+            }
+        }
+
         *result = 0;
         return true;
     }
-    /* 识别鼠标所在的窗口区域类型 */
+    /* 处理激活窗口时的阴影效果 */
     case WM_NCACTIVATE: {
         BOOL compositionEnabled = FALSE;
         // 检查系统是否启用了桌面组合（Aero 玻璃效果）
@@ -338,3 +327,19 @@ bool MarsTitleBar::takeOverNativeEvent(MSG *msg, qintptr *result)
     }
     return false;
 }
+
+void MarsTitleBar::initWindowStyle(HWND hwnd)
+{
+    // 获取当前样式
+    LONG style = GetWindowLong(hwnd, GWL_STYLE);
+
+    // 移除默认标题栏但保留边框
+    style |= WS_THICKFRAME | WS_MAXIMIZEBOX | WS_MINIMIZEBOX;
+
+    SetWindowLong(hwnd, GWL_STYLE, style);
+
+    // 更新窗口
+    SetWindowPos(hwnd, NULL, 0, 0, 0, 0,
+                 SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOOWNERZORDER);
+}
+#endif
