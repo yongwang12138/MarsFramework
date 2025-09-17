@@ -59,11 +59,6 @@ private:
     // 获取命中区域
     HitArea getHitArea(const QPoint& localPos) const;
 
-signals:
-    void minimizeClicked();
-    void maximizeClicked();
-    void closeClicked();
-
 private:
     QHBoxLayout* _layout {nullptr};
     QLabel* _iconLabel {nullptr};
@@ -71,6 +66,7 @@ private:
     QToolButton* _minimizeButton {nullptr};
     QToolButton* _maximizeButton {nullptr};
     QToolButton* _closeButton {nullptr};
+    QScreen* _lastScreen {nullptr};
 };
 
 #endif // MARSTITLEBAR_H

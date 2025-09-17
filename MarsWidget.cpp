@@ -26,16 +26,6 @@ void MarsWidget::setupUi()
 
     // 标题栏
     _titleBar = new MarsTitleBar(this);
-    connect(_titleBar, &MarsTitleBar::minimizeClicked, this, &MarsWidget::showMinimized);
-    connect(_titleBar, &MarsTitleBar::maximizeClicked, this, [this]() {
-        if (isMaximized()) {
-            showNormal();
-        } else {
-            showMaximized();
-        }
-    });
-    connect(_titleBar, &MarsTitleBar::closeClicked, this, &MarsWidget::close);
-
     _layout->addWidget(_titleBar);
 
     // 内容区域

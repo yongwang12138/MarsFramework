@@ -8,6 +8,7 @@
 #include <windows.h>
 #include <windowsx.h>
 #include <dwmapi.h>
+#include "MarsWinShadowHelper.h"
 #endif
 
 MarsTitleBar::MarsTitleBar(QWidget* parent)
@@ -55,6 +56,9 @@ void MarsTitleBar::setupUi()
     _closeButton->setFixedSize(40, 40);
     connect(_closeButton, &QToolButton::clicked, this, &MarsTitleBar::onCloseClicked);
     _layout->addWidget(_closeButton);
+
+    // 上一次所在的屏幕
+    _lastScreen = qApp->screenAt(window()->geometry().center());
 }
 
 HitArea MarsTitleBar::getHitArea(const QPoint &localPos) const
@@ -143,18 +147,21 @@ void MarsTitleBar::mouseDoubleClickEvent(QMouseEvent* event)
 
 void MarsTitleBar::onMinimizeClicked()
 {
-    emit minimizeClicked();
+    window()->showMinimized();
 }
 
 void MarsTitleBar::onMaximizeClicked()
 {
-    emit maximizeClicked();
-    updateMaximizeIcon();
+    if (window()->isMaximized()) {
+        window()->showNormal();
+    } else {
+        window()->showMaximized();
+    }
 }
 
 void MarsTitleBar::onCloseClicked()
 {
-    emit closeClicked();
+    window()->close();
 }
 
 void MarsTitleBar::updateMaximizeIcon()
@@ -166,7 +173,6 @@ void MarsTitleBar::updateMaximizeIcon()
     }
 }
 
-#ifdef Q_OS_WIN
 bool MarsTitleBar::takeOverNativeEvent(MSG *msg, qintptr *result)
 {
     if (!msg || !msg->hwnd) {
@@ -179,14 +185,78 @@ bool MarsTitleBar::takeOverNativeEvent(MSG *msg, qintptr *result)
     const LPARAM lParam = msg->lParam;
 
     switch (message) {
+    case WM_WINDOWPOSCHANGING:
+    {
+        // 当窗口大小即将改变时 通过设置SWP_NOCOPYBITS标志优化窗口重绘行为 避免可能的视觉闪烁
+        WINDOWPOS* wp = reinterpret_cast<WINDOWPOS*>(lParam);
+        if (wp != nullptr && (wp->flags & SWP_NOSIZE) == 0)
+        {
+            wp->flags |= SWP_NOCOPYBITS;
+            *result = ::DefWindowProcW(hwnd, message, wParam, lParam);
+            return true;
+        }
+        return false;
+    }
+    case WM_NCPAINT:
+    {
+        if (!mWinHelper.getIsCompositionEnabled()) {
+            *result = FALSE;
+            return true;
+        } else {
+            return false;
+        }
+    }
+    case WM_NCACTIVATE: {
+        // 处理激活窗口时的阴影效果
+        if (mWinHelper.getIsCompositionEnabled()) {
+            // 调用默认处理，但阻止系统绘制非客户区
+            *result = ::DefWindowProcW(hwnd, WM_NCACTIVATE, wParam, -1);
+
+            // 更新窗口阴影效果
+            bool isActive = wParam != FALSE;
+            const MARGINS shadow = isActive ? MARGINS{10, 10, 10, 10} : MARGINS{5, 5, 5, 5};
+            DwmExtendFrameIntoClientArea(hwnd, &shadow);
+        } else {
+            // 若未启用桌面组合：调用系统默认处理函数
+            *result = DefWindowProcW(hwnd, message, wParam, lParam);
+        }
+        return true;
+    }
+    case WM_SIZE:
+    {
+        if (wParam == SIZE_RESTORED)
+        {
+            _maximizeButton->setIcon(style()->standardIcon(QStyle::SP_TitleBarNormalButton));
+        }
+        else if (wParam == SIZE_MAXIMIZED)
+        {
+            _maximizeButton->setIcon(style()->standardIcon(QStyle::SP_TitleBarMaxButton));
+        }
+        return false;
+    }
     /* 处理计算窗口客户区的大小和位置 */
     case WM_NCCALCSIZE: {
         if (wParam == TRUE) { // 表示需要计算客户区
             // 移除默认窗口边框
             *result = 0; // 告诉 Windows 系统：客户区就是整个窗口区域，不需要预留非客户区（边框、标题栏等）
             return true;
+        } else {
+            return false;
         }
-        break;
+    }
+    case WM_MOVE:
+    {
+        QScreen* currentScreen = qApp->screenAt(window()->geometry().center());
+        if (currentScreen && currentScreen != _lastScreen)
+        {
+            if (_lastScreen)
+            {
+                ::SetWindowPos(hwnd, nullptr, 0, 0, 0, 0, SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_NOMOVE | SWP_NOSIZE | SWP_FRAMECHANGED);
+                ::RedrawWindow(hwnd, nullptr, nullptr, RDW_INVALIDATE | RDW_UPDATENOW);
+            }
+            _lastScreen = currentScreen;
+        }
+        return false;
     }
     /* 判断鼠标在窗口上的位置 返回相应的 "命中测试结果" */
     case WM_NCHITTEST: {
@@ -301,29 +371,10 @@ bool MarsTitleBar::takeOverNativeEvent(MSG *msg, qintptr *result)
                 minMaxInfo->ptMinTrackSize.y = static_cast<LONG>(minSize.height() * dpiScale);
             }
         }
-
         *result = 0;
         return true;
     }
-    /* 处理激活窗口时的阴影效果 */
-    case WM_NCACTIVATE: {
-        BOOL compositionEnabled = FALSE;
-        // 检查系统是否启用了桌面组合（Aero 玻璃效果）
-        HRESULT hr = DwmIsCompositionEnabled(&compositionEnabled);
-        if (SUCCEEDED(hr) && compositionEnabled) {
-            // 调用默认处理，但阻止系统绘制非客户区
-            *result = ::DefWindowProcW(hwnd, WM_NCACTIVATE, wParam, -1);
 
-            // 更新窗口阴影效果
-            bool isActive = wParam != FALSE;
-            const MARGINS shadow = isActive ? MARGINS{10, 10, 10, 10} : MARGINS{5, 5, 5, 5};
-            DwmExtendFrameIntoClientArea(hwnd, &shadow);
-        } else {
-            // 若未启用桌面组合：调用系统默认处理函数
-            *result = DefWindowProcW(hwnd, message, wParam, lParam);
-        }
-        return true;
-    }
     }
     return false;
 }
@@ -342,4 +393,3 @@ void MarsTitleBar::initWindowStyle(HWND hwnd)
     SetWindowPos(hwnd, NULL, 0, 0, 0, 0,
                  SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOOWNERZORDER);
 }
-#endif
