@@ -1,72 +1,68 @@
 #ifndef MARSTITLEBAR_H
 #define MARSTITLEBAR_H
 
-#include <QHBoxLayout>
-#include <QLabel>
+#include <QWidget>
+
+#include "MarsDef.h"
 #include <QToolButton>
 
-// 命中区域枚举
-enum class HitArea {
-    None,           // 未命中
-    TitleBar,       // 命中标题栏
-    MinimizeButton, // 命中最小化按钮
-    MaximizeButton, // 命中最大化按钮
-    CloseButton     // 命中关闭按钮
-};
-
+class QLabel;
+class QScreen;
+class QHBoxLayout;
+class QVBoxLayout;
+class QMenu;
 class MarsTitleBar : public QWidget
 {
     Q_OBJECT
-
 public:
     explicit MarsTitleBar(QWidget* parent = nullptr);
     ~MarsTitleBar() = default;
 
-    void setTitle(const QString& title);
-    void setIcon(const QIcon& icon);
+    void setWindowButtonFlag(MarsTitleBarType::ButtonType buttonFlag, bool isEnable = true);
+    void setWindowButtonFlags(MarsTitleBarType::ButtonFlags buttonFlags);
 
-    // 按钮控制
-    void setMinimizeButtonVisible(bool visible);
-    void setMaximizeButtonVisible(bool visible);
-    void setCloseButtonVisible(bool visible);
-
-    // 获取按钮指针
-    QToolButton* minimizeButton() const;
-    QToolButton* maximizeButton() const;
-    QToolButton* closeButton() const;
-
-    // 更新(最大化/恢复)图标
-    void updateMaximizeIcon();
+    MarsTitleBarType::ButtonFlags getWindowButtonFlags() const;
 
 #ifdef Q_OS_WIN
-    // Windows 原生事件处理
-    bool takeOverNativeEvent(MSG* msg, qintptr* result);
-    // 初始化窗口样式
-    void initWindowStyle(HWND hwnd);
+    int takeOverNativeEvent(const QByteArray& eventType, void* message, qintptr* result);
 #endif
 
 protected:
-    void paintEvent(QPaintEvent* event) override;
-    void mouseDoubleClickEvent(QMouseEvent* event) override;
+    virtual bool eventFilter(QObject* obj, QEvent* event) override;
+#ifdef Q_OS_WIN
+    virtual void paintEvent(QPaintEvent* event) override;
+#endif
+
+private:
+    void _showAppBarMenu(QPoint point);
+    void _updateCursor(int edges);
+    bool _containsCursorToItem(QWidget* item);
 
 private slots:
-    void onMinimizeClicked();
-    void onMaximizeClicked();
-    void onCloseClicked();
+    void onMinButtonClicked();
+    void onMaxButtonClicked();
+    void onCloseButtonClicked();
+
+signals:
+    void themeButtonClicked();
+    void closeButtonClicked();
 
 private:
-    void setupUi();
-    // 获取命中区域
-    HitArea getHitArea(const QPoint& localPos) const;
-
-private:
-    QHBoxLayout* _layout {nullptr};
+    MarsThemeType::ThemeMode _themeMode;
+    QHBoxLayout* _mainLayout {nullptr};
     QLabel* _iconLabel {nullptr};
     QLabel* _titleLabel {nullptr};
-    QToolButton* _minimizeButton {nullptr};
-    QToolButton* _maximizeButton {nullptr};
+    MarsTitleBarType::ButtonFlags _buttonFlags;
+    QToolButton* _themeButton {nullptr};
+    QToolButton* _minButton {nullptr};
+    QToolButton* _maxButton {nullptr};
     QToolButton* _closeButton {nullptr};
     QScreen* _lastScreen {nullptr};
+    qint64 _currentWinID {0};
+    quint64 _clickTimer {0};
+    int _edges {0};
+    int _margins {8};
+    bool _isHoverMaxButton {false};
 };
 
 #endif // MARSTITLEBAR_H

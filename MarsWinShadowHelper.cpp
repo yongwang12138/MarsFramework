@@ -1,37 +1,354 @@
 #include "MarsWinShadowHelper.h"
 
-#include <dwmapi.h>
+#ifdef Q_OS_WIN
+#include <QDebug>
+#include <QWidget>
+
+Q_SINGLETON_CREATE_CPP(MarsWinShadowHelper)
 
 MarsWinShadowHelper::MarsWinShadowHelper(QObject* parent)
-    : QObject{parent}
-{}
-
-MarsWinShadowHelper& MarsWinShadowHelper::instance()
+    : QObject(parent)
 {
-    static MarsWinShadowHelper instance;
-    return instance;
+    _pIsWinVersionGreater10 = true;
+    HMODULE module = LoadLibraryW(L"ntdll.dll");
+    if (module)
+    {
+        auto pRtlGetVersion = reinterpret_cast<RtlGetVersionFunc>(::GetProcAddress(module, "RtlGetVersion"));
+        Q_ASSERT(pRtlGetVersion);
+        _windowsVersion.dwOSVersionInfoSize = sizeof(_windowsVersion);
+        pRtlGetVersion(&_windowsVersion);
+        _pIsWinVersionGreater10 = compareWindowsVersion(Win10_Origin);
+        _pIsWinVersionGreater11 = compareWindowsVersion(Win11_Origin);
+    }
+}
+
+MarsWinShadowHelper::~MarsWinShadowHelper()
+{
+}
+
+bool MarsWinShadowHelper::initWinAPI()
+{
+    HMODULE dwmModule = LoadLibraryW(L"dwmapi.dll");
+    if (dwmModule)
+    {
+        if (!_dwmExtendFrameIntoClientArea)
+        {
+            _dwmExtendFrameIntoClientArea = reinterpret_cast<DwmExtendFrameIntoClientAreaFunc>(GetProcAddress(dwmModule, "DwmExtendFrameIntoClientArea"));
+        }
+        if (!_dwmSetWindowAttribute)
+        {
+            _dwmSetWindowAttribute = reinterpret_cast<DwmSetWindowAttributeFunc>(GetProcAddress(dwmModule, "DwmSetWindowAttribute"));
+        }
+        if (!_dwmIsCompositionEnabled)
+        {
+            _dwmIsCompositionEnabled = reinterpret_cast<DwmIsCompositionEnabledFunc>(GetProcAddress(dwmModule, "DwmIsCompositionEnabled"));
+        }
+        if (!_dwmEnableBlurBehindWindow)
+        {
+            _dwmEnableBlurBehindWindow = reinterpret_cast<DwmEnableBlurBehindWindowFunc>(GetProcAddress(dwmModule, "DwmEnableBlurBehindWindow"));
+        }
+        if (!(_dwmExtendFrameIntoClientArea && _dwmSetWindowAttribute && _dwmIsCompositionEnabled && _dwmEnableBlurBehindWindow))
+        {
+            qCritical() << "Dwm Func Init Incomplete!";
+            return false;
+        }
+    }
+    else
+    {
+        qCritical() << "dwmapi.dll Load Fail!";
+        return false;
+    }
+    HMODULE user32Module = LoadLibraryW(L"user32.dll");
+    if (user32Module)
+    {
+        if (!_setWindowCompositionAttribute)
+        {
+            _setWindowCompositionAttribute = reinterpret_cast<SetWindowCompositionAttributeFunc>(GetProcAddress(user32Module, "SetWindowCompositionAttribute"));
+        }
+        if (!_getDpiForWindow)
+        {
+            _getDpiForWindow = reinterpret_cast<GetDpiForWindowFunc>(GetProcAddress(user32Module, "GetDpiForWindow"));
+        }
+        if (!_getSystemMetricsForDpi)
+        {
+            _getSystemMetricsForDpi = reinterpret_cast<GetSystemMetricsForDpiFunc>(GetProcAddress(user32Module, "GetSystemMetricsForDpi"));
+        }
+        if (!(_setWindowCompositionAttribute && _getDpiForWindow && _getSystemMetricsForDpi))
+        {
+            qCritical() << "User32 Func Init Incomplete!";
+            return false;
+        }
+    }
+    else
+    {
+        qCritical() << "user32.dll Load Fail!";
+        return false;
+    }
+
+    HMODULE shCoreModule = LoadLibraryW(L"SHCore.dll");
+    if (shCoreModule)
+    {
+        if (!_getDpiForMonitor)
+        {
+            _getDpiForMonitor = reinterpret_cast<GetDpiForMonitorFunc>(GetProcAddress(shCoreModule, "GetDpiForMonitor"));
+        }
+        if (!(_getDpiForMonitor))
+        {
+            qCritical() << "SHCore Func Init Incomplete!";
+            return false;
+        }
+    }
+    else
+    {
+        qCritical() << "SHCore.dll Load Fail!";
+        return false;
+    }
+    return true;
+}
+
+void MarsWinShadowHelper::setWindowShadow(quint64 hwnd)
+{
+    static const MARGINS shadow = {1, 0, 0, 0};
+    _dwmExtendFrameIntoClientArea((HWND)hwnd, &shadow);
+}
+
+void MarsWinShadowHelper::setWindowThemeMode(quint64 hwnd, bool isLightMode)
+{
+    if (!compareWindowsVersion(Win10_1809))
+    {
+        return;
+    }
+    BOOL bIsLightMode = !isLightMode;
+    _DWMWINDOWATTRIBUTE dwAttritube = compareWindowsVersion(Win10_20H1) ? _DWMWA_USE_IMMERSIVE_DARK_MODE : _DWMWA_USE_IMMERSIVE_DARK_MODE_BEFORE_20H1;
+    _dwmSetWindowAttribute((HWND)hwnd, dwAttritube, &bIsLightMode, sizeof(bIsLightMode));
+}
+
+void MarsWinShadowHelper::setWindowDisplayMode(QWidget* widget, MarsApplicationType::WindowDisplayMode displayMode, MarsApplicationType::WindowDisplayMode lastDisplayMode)
+{
+    HWND winHwnd = (HWND)widget->winId();
+    switch (lastDisplayMode)
+    {
+    case MarsApplicationType::Mica:
+    {
+        if (!compareWindowsVersion(Win11_Origin))
+        {
+            break;
+        }
+        if (compareWindowsVersion(Win11_22H2))
+        {
+            const _DWM_SYSTEMBACKDROP_TYPE backdropType = _DWMSBT_AUTO;
+            _dwmSetWindowAttribute(winHwnd, _DWMWA_SYSTEMBACKDROP_TYPE, &backdropType, sizeof(backdropType));
+        }
+        else
+        {
+            const BOOL isEnable = FALSE;
+            _dwmSetWindowAttribute(winHwnd, _DWMWA_MICA_EFFECT, &isEnable, sizeof(isEnable));
+        }
+        break;
+    }
+    case MarsApplicationType::MicaAlt:
+    {
+        if (!compareWindowsVersion(Win11_22H2))
+        {
+            break;
+        }
+        const _DWM_SYSTEMBACKDROP_TYPE backdropType = _DWMSBT_AUTO;
+        _dwmSetWindowAttribute(winHwnd, _DWMWA_SYSTEMBACKDROP_TYPE, &backdropType, sizeof(backdropType));
+        break;
+    }
+    case MarsApplicationType::Acrylic:
+    {
+        if (!compareWindowsVersion(Win11_Origin))
+        {
+            break;
+        }
+        const _DWM_SYSTEMBACKDROP_TYPE backdropType = _DWMSBT_AUTO;
+        _dwmSetWindowAttribute(winHwnd, _DWMWA_SYSTEMBACKDROP_TYPE, &backdropType, sizeof(backdropType));
+        break;
+    }
+    case MarsApplicationType::DWMBlur:
+    {
+        if (compareWindowsVersion(Win7_Origin))
+        {
+            _ACCENT_POLICY policy{};
+            policy.dwAccentState = _ACCENT_DISABLED;
+            policy.dwAccentFlags = _ACCENT_NONE;
+            _WINDOWCOMPOSITIONATTRIBDATA wcad{};
+            wcad.Attrib = _WCA_ACCENT_POLICY;
+            wcad.pvData = &policy;
+            wcad.cbData = sizeof(policy);
+            _setWindowCompositionAttribute(winHwnd, &wcad);
+        }
+        else
+        {
+            DWM_BLURBEHIND bb{};
+            bb.fEnable = FALSE;
+            bb.dwFlags = DWM_BB_ENABLE;
+            _dwmEnableBlurBehindWindow(winHwnd, &bb);
+        }
+        break;
+    }
+    default:
+    {
+        break;
+    }
+    }
+
+    switch (displayMode)
+    {
+    case MarsApplicationType::Mica:
+    {
+        if (!compareWindowsVersion(Win11_Origin))
+        {
+            break;
+        }
+        _externWindowMargins(winHwnd);
+        if (compareWindowsVersion(Win11_22H2))
+        {
+            const _DWM_SYSTEMBACKDROP_TYPE backdropType = _DWMSBT_MAINWINDOW;
+            _dwmSetWindowAttribute(winHwnd, _DWMWA_SYSTEMBACKDROP_TYPE, &backdropType, sizeof(backdropType));
+        }
+        else
+        {
+            const BOOL enable = TRUE;
+            _dwmSetWindowAttribute(winHwnd, _DWMWA_MICA_EFFECT, &enable, sizeof(enable));
+        }
+        break;
+    }
+    case MarsApplicationType::MicaAlt:
+    {
+        if (!compareWindowsVersion(Win11_22H2))
+        {
+            break;
+        }
+        _externWindowMargins(winHwnd);
+        const _DWM_SYSTEMBACKDROP_TYPE backdropType = _DWMSBT_TABBEDWINDOW;
+        _dwmSetWindowAttribute(winHwnd, _DWMWA_SYSTEMBACKDROP_TYPE, &backdropType, sizeof(backdropType));
+        break;
+    }
+    case MarsApplicationType::Acrylic:
+    {
+        if (!compareWindowsVersion(Win11_Origin))
+        {
+            break;
+        }
+        _externWindowMargins(winHwnd);
+        const _DWM_SYSTEMBACKDROP_TYPE backdropType = _DWMSBT_TRANSIENTWINDOW;
+        _dwmSetWindowAttribute(winHwnd, _DWMWA_SYSTEMBACKDROP_TYPE, &backdropType, sizeof(backdropType));
+        break;
+    }
+    case MarsApplicationType::DWMBlur:
+    {
+        MARGINS windowMargins = {0, 1, 0, 0};
+        _dwmExtendFrameIntoClientArea(winHwnd, &windowMargins);
+        if (compareWindowsVersion(Win7_Origin))
+        {
+            _ACCENT_POLICY policy{};
+            policy.dwAccentState = _ACCENT_ENABLE_BLURBEHIND;
+            policy.dwAccentFlags = _ACCENT_NONE;
+            _WINDOWCOMPOSITIONATTRIBDATA wcad{};
+            wcad.Attrib = _WCA_ACCENT_POLICY;
+            wcad.pvData = &policy;
+            wcad.cbData = sizeof(policy);
+            _setWindowCompositionAttribute(winHwnd, &wcad);
+        }
+        else
+        {
+            DWM_BLURBEHIND bb{};
+            bb.fEnable = TRUE;
+            bb.dwFlags = DWM_BB_ENABLE;
+            _dwmEnableBlurBehindWindow(winHwnd, &bb);
+        }
+        break;
+    }
+    default:
+    {
+        break;
+    }
+    }
 }
 
 bool MarsWinShadowHelper::getIsCompositionEnabled() const
 {
-    // 检查系统是否启用了桌面窗口管理器(DWM)
     BOOL isCompositionEnabled = false;
-    DwmIsCompositionEnabled(&isCompositionEnabled);
+    _dwmIsCompositionEnabled(&isCompositionEnabled);
     return isCompositionEnabled;
+}
+
+bool MarsWinShadowHelper::getIsFullScreen(const HWND hwnd)
+{
+    RECT windowRect{};
+    ::GetWindowRect(hwnd, &windowRect);
+    RECT rcMonitor = getMonitorForWindow(hwnd).rcMonitor;
+    return windowRect.top == rcMonitor.top && windowRect.left == rcMonitor.left && windowRect.right == rcMonitor.right && windowRect.bottom == rcMonitor.bottom;
+}
+
+MONITORINFOEXW MarsWinShadowHelper::getMonitorForWindow(const HWND hwnd)
+{
+    HMONITOR monitor = ::MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
+    MONITORINFOEXW monitorInfo{};
+    monitorInfo.cbSize = sizeof(monitorInfo);
+    ::GetMonitorInfoW(monitor, &monitorInfo);
+    return monitorInfo;
+}
+
+quint32 MarsWinShadowHelper::getResizeBorderThickness(const HWND hwnd)
+{
+    return getSystemMetricsForDpi(hwnd, SM_CXSIZEFRAME) + getSystemMetricsForDpi(hwnd, 92);
 }
 
 quint32 MarsWinShadowHelper::getDpiForWindow(const HWND hwnd)
 {
-    return GetDpiForWindow(hwnd);
+    if (_getDpiForWindow)
+    {
+        return _getDpiForWindow(hwnd);
+    }
+    else if (_getDpiForMonitor)
+    {
+        HMONITOR monitor = ::MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
+        UINT dpiX{0};
+        UINT dpiY{0};
+        _getDpiForMonitor(monitor, MDT_EFFECTIVE_DPI, &dpiX, &dpiY);
+        return dpiX;
+    }
+    else
+    {
+        HDC hdc = ::GetDC(nullptr);
+        const int dpiX = ::GetDeviceCaps(hdc, LOGPIXELSX);
+        ::ReleaseDC(nullptr, hdc);
+        return quint32(dpiX);
+    }
 }
 
 int MarsWinShadowHelper::getSystemMetricsForDpi(const HWND hwnd, const int index)
 {
     const quint32 dpi = getDpiForWindow(hwnd);
-    return GetSystemMetricsForDpi(index, dpi);
+    if (_getSystemMetricsForDpi)
+    {
+        return _getSystemMetricsForDpi(index, dpi);
+    }
+    const int result = ::GetSystemMetrics(index);
+    if (dpi != 96)
+    {
+        return result;
+    }
+    const qreal dpr = qreal(dpi) / qreal(96);
+    return qRound(qreal(result) / dpr);
 }
 
-quint32 MarsWinShadowHelper::getResizeBorderThickness(const HWND hwnd)
+bool MarsWinShadowHelper::compareWindowsVersion(const QString& windowsVersion) const
 {
-    return getSystemMetricsForDpi(hwnd, SM_CXSIZEFRAME) + getSystemMetricsForDpi(hwnd, SM_CXPADDEDBORDER);
+    QStringList versionList = windowsVersion.split(".");
+    if (versionList.count() != 3)
+    {
+        return false;
+    }
+    return (_windowsVersion.dwMajorVersion > versionList[0].toUInt()) || (_windowsVersion.dwMajorVersion == versionList[0].toUInt() && (_windowsVersion.dwMinorVersion > versionList[1].toUInt() || _windowsVersion.dwBuildNumber >= versionList[2].toUInt()));
 }
+
+void MarsWinShadowHelper::_externWindowMargins(HWND hwnd)
+{
+    static const MARGINS margins = {65536, 0, 0, 0};
+    _dwmExtendFrameIntoClientArea(hwnd, &margins);
+}
+#endif
