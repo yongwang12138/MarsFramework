@@ -49,7 +49,7 @@ MarsTitleBar::MarsTitleBar(QWidget* parent)
     }
     connect(parent, &QWidget::windowIconChanged, this, [=](const QIcon& icon) {
         _iconLabel->setPixmap(icon.pixmap(30, 30));
-        _iconLabel->setVisible(icon.isNull() ? false : true);
+        _iconLabel->setVisible(!icon.isNull());
     });
 
     //标题
@@ -64,7 +64,7 @@ MarsTitleBar::MarsTitleBar(QWidget* parent)
     }
     connect(parent, &QWidget::windowTitleChanged, this, [=](const QString& title) {
         _titleLabel->setText(title);
-        _titleLabel->setVisible(title.isEmpty() ? false : true);
+        _titleLabel->setVisible(!title.isEmpty());
     });
 
     // 主题按钮
@@ -358,8 +358,6 @@ int MarsTitleBar::takeOverNativeEvent(const QByteArray& eventType, void* message
         minMaxInfo->ptMaxPosition.y = workArea.top;
         minMaxInfo->ptMaxSize.x = workArea.right - workArea.left;
         minMaxInfo->ptMaxSize.y = workArea.bottom - workArea.top;
-        minMaxInfo->ptMaxTrackSize.x = workArea.right - workArea.left;
-        minMaxInfo->ptMaxTrackSize.y = workArea.bottom - workArea.top;
 
         // 设置最小窗口尺寸
         QSize minSize = window()->minimumSize();
