@@ -2,6 +2,23 @@
 #define MARSPROPERTY_H
 
 // 普通属性快速创建
+
+#define Q_PROPERTY_CREATE(TYPE, M)                          \
+Q_PROPERTY(TYPE p##M MEMBER _p##M NOTIFY p##M##Changed)     \
+    public:                                                 \
+    Q_SIGNAL void p##M##Changed();                          \
+    void set##M(TYPE M)                                     \
+{                                                           \
+        _p##M = std::move(M);                               \
+        Q_EMIT p##M##Changed();                             \
+}                                                           \
+    TYPE get##M() const                                     \
+{                                                           \
+        return _p##M;                                       \
+}                                                           \
+    private:                                                \
+    TYPE _p##M;
+
 #define Q_PROPERTY_CREATE_H(TYPE, M)                                \
 Q_PROPERTY(TYPE p##M READ get##M WRITE set##M NOTIFY p##M##Changed) \
     public:                                                         \
@@ -34,5 +51,8 @@ public:                             \
 }                                   \
     private:                        \
     TYPE _p##M;
+
+
+
 
 #endif // MARSPROPERTY_H

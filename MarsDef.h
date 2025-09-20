@@ -86,7 +86,7 @@ Q_ENUM_NS(ThemeColor)
 
 namespace MarsTitleBarType
 {
-Q_NAMESPACE  // 启用元对象对命名空间内枚举的支持
+Q_NAMESPACE
 
 enum ButtonType
 {

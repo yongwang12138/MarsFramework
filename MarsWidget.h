@@ -5,6 +5,7 @@
 
 #include "MarsTitleBar.h"
 #include "MarsDef.h"
+#include "MarsThemeAnimationWidget.h"
 
 class QVBoxLayout;
 class MarsWidget : public QWidget
@@ -21,12 +22,19 @@ protected:
     virtual void paintEvent(QPaintEvent* event) override;
     virtual bool nativeEvent(const QByteArray& eventType, void* message, qintptr* result) override;
 
+private slots:
+    void onThemeReadyChange();
+
 private:
-    MarsApplicationType::WindowDisplayMode _windowDisplayMode;
+    qreal _distance(QPoint point1, QPoint point2);
+
+private:
+    MarsApplicationType::WindowDisplayMode _windowDisplayMode {MarsApplicationType::Normal};
     MarsThemeType::ThemeMode _themeMode;
     QVBoxLayout* _layout {nullptr};
     MarsTitleBar* _titleBar {nullptr};
     QWidget* _mainWidget {nullptr};
+    MarsThemeAnimationWidget* _animationWidget {nullptr};
 };
 
 #endif // MARSWIDGET_H

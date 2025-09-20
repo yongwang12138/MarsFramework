@@ -6,6 +6,7 @@
 #include "MarsDef.h"
 #include "MarsSingleton.h"
 
+#define mTheme MarsTheme::instance()
 class QPainter;
 class MarsTheme : public QObject
 {
@@ -25,7 +26,7 @@ public:
     void setThemeColor(MarsThemeType::ThemeMode themeMode, MarsThemeType::ThemeColor themeColor, QColor newColor);
     const QColor& getThemeColor(MarsThemeType::ThemeMode themeMode, MarsThemeType::ThemeColor themeColor);
 
-Q_SIGNALS:
+signals:
     void themeModeChanged(MarsThemeType::ThemeMode themeMode);
 
 private:

@@ -32,7 +32,7 @@ MarsTitleBar::MarsTitleBar(QWidget* parent)
     setFixedHeight(40);
     window()->installEventFilter(this);
 #ifdef Q_OS_WIN
-    eWinHelper.initWinAPI();
+    mWinHelper.initWinAPI();
 #endif
     setMouseTracking(true);
     setObjectName("MarsTitleBar");
@@ -110,8 +110,8 @@ MarsTitleBar::MarsTitleBar(QWidget* parent)
     _lastScreen = qApp->screenAt(window()->geometry().center());
 #endif
 
-    _themeMode = MarsTheme::instance().getThemeMode();
-    connect(&MarsTheme::instance(), &MarsTheme::themeModeChanged, this, [=](MarsThemeType::ThemeMode themeMode) {
+    _themeMode = mTheme.getThemeMode();
+    connect(&mTheme, &MarsTheme::themeModeChanged, this, [=](MarsThemeType::ThemeMode themeMode) {
         _themeMode = themeMode;
         update();
     });
@@ -185,7 +185,7 @@ int MarsTitleBar::takeOverNativeEvent(const QByteArray& eventType, void* message
     }
     case WM_NCPAINT:
     {
-        if (!eWinHelper.getIsCompositionEnabled())
+        if (!mWinHelper.getIsCompositionEnabled())
         {
             *result = FALSE;
             return 1;
@@ -197,7 +197,7 @@ int MarsTitleBar::takeOverNativeEvent(const QByteArray& eventType, void* message
     }
     case WM_NCACTIVATE:
     {
-        if (eWinHelper.getIsCompositionEnabled())
+        if (mWinHelper.getIsCompositionEnabled())
         {
             *result = ::DefWindowProcW(hwnd, WM_NCACTIVATE, wParam, -1);
         }
@@ -226,7 +226,7 @@ int MarsTitleBar::takeOverNativeEvent(const QByteArray& eventType, void* message
             return 0;
         }
         RECT* clientRect = &((NCCALCSIZE_PARAMS*)(lParam))->rgrc[0];
-        if (eWinHelper.getIsWinVersionGreater10())
+        if (mWinHelper.getIsWinVersionGreater10())
         {
             const LONG originTop = clientRect->top;
             const LRESULT hitTestResult = ::DefWindowProcW(hwnd, WM_NCCALCSIZE, wParam, lParam);
@@ -241,9 +241,9 @@ int MarsTitleBar::takeOverNativeEvent(const QByteArray& eventType, void* message
         {
             auto geometry = window()->screen()->geometry();
             clientRect->top = geometry.top();
-            if (!eWinHelper.getIsWinVersionGreater10())
+            if (!mWinHelper.getIsWinVersionGreater10())
             {
-                quint32 borderThickness = eWinHelper.getResizeBorderThickness(hwnd);
+                quint32 borderThickness = mWinHelper.getResizeBorderThickness(hwnd);
                 clientRect->left = geometry.left();
                 clientRect->bottom -= borderThickness;
                 clientRect->right -= borderThickness;
@@ -454,7 +454,7 @@ bool MarsTitleBar::eventFilter(QObject* obj, QEvent* event)
         DWORD style = ::GetWindowLongPtr(hwnd, GWL_STYLE);
         style &= ~WS_SYSMENU;
         ::SetWindowLongPtr(hwnd, GWL_STYLE, style | WS_MAXIMIZEBOX | WS_THICKFRAME);
-        if (!eWinHelper.getIsWinVersionGreater10())
+        if (!mWinHelper.getIsWinVersionGreater10())
         {
             SetClassLong(hwnd, GCL_STYLE, GetClassLong(hwnd, GCL_STYLE) | CS_DROPSHADOW);
         }
@@ -585,15 +585,15 @@ bool MarsTitleBar::eventFilter(QObject* obj, QEvent* event)
 void MarsTitleBar::paintEvent(QPaintEvent* event)
 {
     Q_UNUSED(event);
-    if (eWinHelper.getIsWinVersionGreater10() && !eWinHelper.getIsWinVersionGreater11())
+    if (mWinHelper.getIsWinVersionGreater10() && !mWinHelper.getIsWinVersionGreater11())
     {
         QPainter painter(this);
         painter.save();
         painter.setRenderHints(QPainter::Antialiasing);
-        auto borderWidth = eWinHelper.getSystemMetricsForDpi((HWND)_currentWinID, SM_CXBORDER);
+        auto borderWidth = mWinHelper.getSystemMetricsForDpi((HWND)_currentWinID, SM_CXBORDER);
         painter.setPen(QPen(window()->isActiveWindow() ?
-                                MarsTheme::instance().getThemeColor(_themeMode, MarsThemeType::Win10BorderActive) :
-                                MarsTheme::instance().getThemeColor(_themeMode, MarsThemeType::Win10BorderInactive), borderWidth));
+                                mTheme.getThemeColor(_themeMode, MarsThemeType::Win10BorderActive) :
+                                mTheme.getThemeColor(_themeMode, MarsThemeType::Win10BorderInactive), borderWidth));
         painter.drawLine(QPoint(0, 0), QPoint(window()->width(), 0));
         painter.restore();
     }

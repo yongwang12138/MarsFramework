@@ -13,7 +13,7 @@ MarsTheme::MarsTheme(QObject* parent)
 void MarsTheme::setThemeMode(MarsThemeType::ThemeMode themeMode)
 {
     _themeMode = themeMode;
-    Q_EMIT themeModeChanged(_themeMode);
+    emit themeModeChanged(_themeMode);
 }
 
 MarsThemeType::ThemeMode MarsTheme::getThemeMode() const

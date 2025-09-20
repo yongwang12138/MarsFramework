@@ -16,7 +16,7 @@
 #define Win11_Origin "10.0.22000"
 #define Win11_22H2 "10.0.22621"
 
-#define eWinHelper MarsWinShadowHelper::instance()
+#define mWinHelper MarsWinShadowHelper::instance()
 class MarsWinShadowHelper : public QObject
 {
     Q_OBJECT

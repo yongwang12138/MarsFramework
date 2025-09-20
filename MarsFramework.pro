@@ -7,16 +7,23 @@ HEADERS += \
     MarsProperty.h \
     MarsSingleton.h \
     MarsTheme.h \
+    MarsThemeAnimationWidget.h \
     MarsTitleBar.h \
     MarsWidget.h \
-    MarsWinShadowHelper.h
+    MarsWinShadowHelper.h \
+    widget.h
 
 SOURCES += \
     MarsTheme.cpp \
+    MarsThemeAnimationWidget.cpp \
     MarsTitleBar.cpp \
     MarsWidget.cpp \
     MarsWinShadowHelper.cpp \
-    main.cpp 
+    main.cpp  \
+    widget.cpp
 
 LIBS += -ldwmapi
 LIBS += -lgdi32
+
+FORMS += \
+    widget.ui
