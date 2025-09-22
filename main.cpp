@@ -1,12 +1,12 @@
 #include <QApplication>
-#include "MarsWidget.h"
+#include "MarsWindow.h"
 #include "widget.h"
 
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
 
-    MarsWidget window;
+    MarsWindow window;
     window.show();
 
     Widget x = Widget();

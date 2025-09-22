@@ -4,6 +4,7 @@
 #include <QWidget>
 
 #include "MarsDef.h"
+#include "MarsText.h"
 #include <QToolButton>
 
 class QLabel;
@@ -51,7 +52,7 @@ private:
     MarsThemeType::ThemeMode _themeMode;
     QHBoxLayout* _mainLayout {nullptr};
     QLabel* _iconLabel {nullptr};
-    QLabel* _titleLabel {nullptr};
+    MarsText* _titleLabel {nullptr};
     MarsTitleBarType::ButtonFlags _buttonFlags;
     QToolButton* _themeButton {nullptr};
     QToolButton* _minButton {nullptr};

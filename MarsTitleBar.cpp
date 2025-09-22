@@ -53,7 +53,7 @@ MarsTitleBar::MarsTitleBar(QWidget* parent)
     });
 
     //标题
-    _titleLabel = new QLabel(this);
+    _titleLabel = new MarsText(this);
     if (parent->windowTitle().isEmpty())
     {
         _titleLabel->setVisible(false);
