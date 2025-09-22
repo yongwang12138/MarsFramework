@@ -1,5 +1,7 @@
 #include "MarsWindow.h"
 
+#include <QMenuBar>
+#include <QStatusBar>
 #include <QPainter>
 #include <QScreen>
 #include <QStyle>
@@ -15,7 +17,15 @@ MarsWindow::MarsWindow(QWidget* parent)
     setObjectName("MarsWindow");
     // setAttribute(Qt::WA_TranslucentBackground);
 
-    _layout = new QVBoxLayout(this);
+    // 移除默认的菜单栏
+    menuBar()->setVisible(false);
+    // 移除状态栏
+    statusBar()->setVisible(false);
+    // 创建一个中央容器widget
+    QWidget* centralContainer = new QWidget(this);
+    setCentralWidget(centralContainer); // 设置为QMainWindow的中央部件
+
+    _layout = new QVBoxLayout(centralContainer);
     _layout->setContentsMargins(0, 0, 0, 0);
     _layout->setSpacing(0);
 

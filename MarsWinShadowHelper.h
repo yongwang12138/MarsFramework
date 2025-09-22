@@ -8,7 +8,6 @@
 #include <windowsx.h>
 
 #define Win7_Origin "6.1.0"
-#define Win8_Origin "6.2.0"
 #define Win10_Origin "10.0.0"
 #define Win10_1809 "10.0.17763"
 #define Win10_1903 "10.0.18362"

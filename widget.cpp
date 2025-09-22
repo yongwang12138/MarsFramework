@@ -19,10 +19,8 @@ void Widget::on_pushButton_clicked()
 {
     if(mTheme.getThemeMode() == MarsThemeType::Light) {
         mTheme.setThemeMode(MarsThemeType::Dark);
-        qDebug() << "mTheme.setThemeMode(MarsThemeType::Dark);";
     } else if(mTheme.getThemeMode() == MarsThemeType::Dark) {
         mTheme.setThemeMode(MarsThemeType::Light);
-        qDebug() << "mTheme.setThemeMode(MarsThemeType::Light);";
     }
 }
 
