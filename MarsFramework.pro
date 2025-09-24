@@ -13,28 +13,13 @@ contains(DEFINES, MARSFRAMEWORK_LIB) {
 # 库文件输出目录
 DESTDIR = $$PWD/../bin_win
 
+include(MarsTools/MarsTools.pri)
+
 HEADERS += \
-    MarsDef.h \
-    MarsProperty.h \
-    MarsSingleton.h \
-    MarsText.h \
-    MarsTheme.h \
-    MarsThemeAnimationWidget.h \
-    MarsTitleBar.h \
-    MarsWidget.h \
-    MarsWinShadowHelper.h \
-    MarsWindow.h \
-    widget.h
+    MarsWindow.h
 
 SOURCES += \
-    MarsText.cpp \
-    MarsTheme.cpp \
-    MarsThemeAnimationWidget.cpp \
-    MarsTitleBar.cpp \
-    MarsWidget.cpp \
-    MarsWinShadowHelper.cpp \
-    MarsWindow.cpp \
-    widget.cpp
+    MarsWindow.cpp
 
 # 屏蔽main函数（仅在作为库时生效）
 contains(DEFINES, MARSFRAMEWORK_LIB) {
@@ -43,9 +28,3 @@ contains(DEFINES, MARSFRAMEWORK_LIB) {
     # 作为独立程序时才包含main.cpp
     SOURCES += main.cpp
 }
-
-LIBS += -ldwmapi
-LIBS += -lgdi32
-
-FORMS += \
-    widget.ui

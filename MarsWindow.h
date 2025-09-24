@@ -2,20 +2,22 @@
 #define MARSWINDOW_H
 
 #include <QMainWindow>
+#include <QStackedWidget>
 
 #include "MarsTitleBar.h"
 #include "MarsDef.h"
 #include "MarsThemeAnimationWidget.h"
 
 class QVBoxLayout;
-class MarsWindow : public QMainWindow
+class MarsWindow : public QWidget
 {
     Q_OBJECT
 public:
     explicit MarsWindow(QWidget* parent = nullptr);
     ~MarsWindow() = default;
     void moveToCenter();
-    void setMainWidget(QWidget* widget);
+    void setNavButtons(const QList<MarsNavButton>& navButtons);
+    void addCentralWidget(QWidget* centralWidget);
 
 protected:
     virtual void paintEvent(QPaintEvent* event) override;
@@ -25,6 +27,7 @@ private slots:
     void onThemeReadyChange();
 
 private:
+    void initNavButtons();
     qreal _distance(QPoint point1, QPoint point2);
 
 private:
@@ -32,8 +35,8 @@ private:
     MarsThemeType::ThemeMode _themeMode;
     QVBoxLayout* _layout {nullptr};
     MarsTitleBar* _titleBar {nullptr};
-    QWidget* _mainWidget {nullptr};
     MarsThemeAnimationWidget* _animationWidget {nullptr};
+    QStackedWidget*  _centerStackedWidget{nullptr};
 };
 
 #endif // MARSWINDOW_H

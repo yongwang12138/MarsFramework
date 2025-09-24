@@ -67,6 +67,11 @@ MarsTitleBar::MarsTitleBar(QWidget* parent)
         _titleLabel->setVisible(!title.isEmpty());
     });
 
+    // 导航按钮布局
+    _navButtonLayout = new QHBoxLayout();
+    _navButtonLayout->setContentsMargins(0, 0, 0, 0);
+    _navButtonLayout->setSpacing(5);
+
     // 主题按钮
     _themeButton = new QToolButton(this);
     _themeButton->setIcon(style()->standardIcon(QStyle::SP_TitleBarContextHelpButton));
@@ -89,12 +94,14 @@ MarsTitleBar::MarsTitleBar(QWidget* parent)
     _closeButton->setFixedSize(40, 40);
     connect(_closeButton, &QToolButton::clicked, this, &MarsTitleBar::onCloseButtonClicked);
 
+    // 主布局
     _mainLayout = new QHBoxLayout(this);
     _mainLayout->setContentsMargins(5, 0, 0, 0);
     _mainLayout->setSpacing(5);
     _mainLayout->addWidget(_iconLabel);
     _mainLayout->addWidget(_titleLabel);
     _mainLayout->addStretch();
+    _mainLayout->addLayout(_navButtonLayout);
     _mainLayout->addWidget(_themeButton);
     _mainLayout->addWidget(_minButton);
     _mainLayout->addWidget(_maxButton);
@@ -151,6 +158,55 @@ void MarsTitleBar::setWindowButtonFlags(MarsTitleBarType::ButtonFlags buttonFlag
 MarsTitleBarType::ButtonFlags MarsTitleBar::getWindowButtonFlags() const
 {
     return _buttonFlags;
+}
+
+void MarsTitleBar::setNavButtons(const QList<MarsNavButton>& navButtons)
+{
+    // 清理现有的按钮
+    while (!_navButtons.isEmpty()) {
+        QToolButton* button = _navButtons.takeFirst(); // 移除并返回第一个元素
+        _navButtonLayout->removeWidget(button);
+        button->deleteLater();
+    }
+    _navButtons.clear();
+
+    // 创建新的按钮
+    for (int i = 0; i < navButtons.size(); ++i)
+    {
+        QToolButton* button = new QToolButton(this);
+        button->setText(navButtons.at(i).name);
+        button->setFixedHeight(40);
+        // button->setFixedSize(40, 40);
+        button->setCheckable(true);
+
+        // 设置用户数据
+        button->setProperty("navIndex", i);
+
+        connect(button, &QToolButton::clicked, this, &MarsTitleBar::onNavButtonClicked);
+        _navButtons.append(button);
+        _navButtonLayout->addWidget(button);
+    }
+
+    // 默认选择第一个按钮
+    if (!_navButtons.isEmpty()) {
+        setCurrentNavButton(0);
+    }
+}
+
+void MarsTitleBar::setCurrentNavButton(int index)
+{
+    if (index < 0 || index >= _navButtons.size()) {
+        return;
+    }
+
+    // 取消之前选中的按钮
+    if (_currentNavIndex >= 0 && _currentNavIndex < _navButtons.size()) {
+        _navButtons[_currentNavIndex]->setChecked(false);
+    }
+
+    // 设置新的选中按钮
+    _currentNavIndex = index;
+    _navButtons[index]->setChecked(true);
 }
 
 #ifdef Q_OS_WIN
@@ -695,9 +751,18 @@ bool MarsTitleBar::_containsCursorToItem(QWidget *item)
     QRectF rect = QRectF(item->mapTo(item->window(), QPoint(0, 0)), item->size());
     if (item == this)
     {
-        if (_containsCursorToItem(_themeButton) || _containsCursorToItem(_minButton) || _containsCursorToItem(_maxButton) || _containsCursorToItem(_closeButton))
+        if (_containsCursorToItem(_themeButton) || _containsCursorToItem(_minButton) ||
+            _containsCursorToItem(_maxButton) || _containsCursorToItem(_closeButton))
         {
             return false;
+        }
+        const int count = _navButtons.count();
+        for (int i = 0; i < count; ++i) {
+            QToolButton* button = _navButtons[i];
+            if (_containsCursorToItem(button))
+            {
+                return false;
+            }
         }
     }
     else if (item == _maxButton)
@@ -709,4 +774,14 @@ bool MarsTitleBar::_containsCursorToItem(QWidget *item)
         return true;
     }
     return false;
+}
+
+void MarsTitleBar::onNavButtonClicked()
+{
+    QToolButton* button = qobject_cast<QToolButton*>(sender());
+    if (button) {
+        int index = button->property("navIndex").toInt();
+        setCurrentNavButton(index);
+        emit navButtonClicked(index);
+    }
 }

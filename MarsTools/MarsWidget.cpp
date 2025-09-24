@@ -28,7 +28,6 @@ MarsWidget::MarsWidget(QWidget* parent)
     // 内容区域
     _mainWidget = new QWidget(this);
     _mainWidget->setObjectName("mainWidget");
-    _mainWidget->setStyleSheet("QWidget#mainWidget { background: white; border: none; }");
     _layout->addWidget(_mainWidget, 1);
 
     // 主题

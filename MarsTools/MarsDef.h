@@ -117,4 +117,16 @@ Q_DECLARE_FLAGS(WMMouseActionTypes, WMMouseActionType)
 Q_DECLARE_OPERATORS_FOR_FLAGS(MarsTitleBarType::ButtonFlags)
 Q_DECLARE_OPERATORS_FOR_FLAGS(MarsTitleBarType::WMMouseActionTypes)
 
+struct MarsNavButton
+{
+    QString name;        // 显示名称
+    QString iconPath;    // 图标路径（可空）
+
+    // 构造函数：name为必填，iconPath可选（默认空字符串）
+    MarsNavButton(QString name, QString iconPath = QString())
+        : name(std::move(name)), iconPath(std::move(iconPath))
+    {
+    }
+};
+
 #endif // MARSDEF_H

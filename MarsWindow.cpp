@@ -1,7 +1,5 @@
 #include "MarsWindow.h"
 
-#include <QMenuBar>
-#include <QStatusBar>
 #include <QPainter>
 #include <QScreen>
 #include <QStyle>
@@ -9,7 +7,7 @@
 #include "MarsTheme.h"
 
 MarsWindow::MarsWindow(QWidget* parent)
-    : QMainWindow{parent}
+    : QWidget{parent}
 {
     resize(800, 600);
     setWindowIcon(style()->standardIcon(QStyle::SP_ComputerIcon));
@@ -17,15 +15,8 @@ MarsWindow::MarsWindow(QWidget* parent)
     setObjectName("MarsWindow");
     // setAttribute(Qt::WA_TranslucentBackground);
 
-    // 移除默认的菜单栏
-    menuBar()->setVisible(false);
-    // 移除状态栏
-    statusBar()->setVisible(false);
-    // 创建一个中央容器widget
-    QWidget* centralContainer = new QWidget(this);
-    setCentralWidget(centralContainer); // 设置为QMainWindow的中央部件
 
-    _layout = new QVBoxLayout(centralContainer);
+    _layout = new QVBoxLayout(this);
     _layout->setContentsMargins(0, 0, 0, 0);
     _layout->setSpacing(0);
 
@@ -35,11 +26,10 @@ MarsWindow::MarsWindow(QWidget* parent)
                                     | MarsTitleBarType::MaximizeButtonHint | MarsTitleBarType::CloseButtonHint);
     _layout->addWidget(_titleBar);
 
-    // 内容区域
-    _mainWidget = new QWidget(this);
-    _mainWidget->setObjectName("mainWidget");
-    _mainWidget->setStyleSheet("QWidget#mainWidget { background: white; border: none; }");
-    _layout->addWidget(_mainWidget, 1);
+    // 中心堆栈窗口
+    _centerStackedWidget = new QStackedWidget(this);
+    _centerStackedWidget->setObjectName("centerStackedWidget");
+    _layout->addWidget(_centerStackedWidget, 1);
 
     // 主题
     _themeMode = mTheme.getThemeMode();
@@ -48,6 +38,14 @@ MarsWindow::MarsWindow(QWidget* parent)
         update();
     });
     connect(_titleBar, &MarsTitleBar::themeButtonClicked, this, &MarsWindow::onThemeReadyChange);
+	
+	// 导航按钮
+    initNavButtons();
+    connect(_titleBar, &MarsTitleBar::navButtonClicked, this, [=](int index) {
+        if (index >= 0 && index < _centerStackedWidget->count()) {
+            _centerStackedWidget->setCurrentIndex(index);
+        }
+    });
 }
 
 void MarsWindow::moveToCenter()
@@ -61,17 +59,14 @@ void MarsWindow::moveToCenter()
     setGeometry((geometry.left() + geometry.right() - width()) / 2, (geometry.top() + geometry.bottom() - height()) / 2, width(), height());
 }
 
-void MarsWindow::setMainWidget(QWidget* widget)
+void MarsWindow::setNavButtons(const QList<MarsNavButton>& navButtons)
 {
-    if (_mainWidget) {
-        _layout->removeWidget(_mainWidget);
-        _mainWidget->deleteLater();
-    }
+    _titleBar->setNavButtons(navButtons);
+}
 
-    _mainWidget = widget;
-    if (_mainWidget) {
-        _layout->addWidget(_mainWidget, 1);
-    }
+void MarsWindow::addCentralWidget(QWidget* centralWidget)
+{
+    _centerStackedWidget->addWidget(centralWidget);
 }
 
 void MarsWindow::paintEvent(QPaintEvent* event)
@@ -149,6 +144,14 @@ void MarsWindow::onThemeReadyChange()
         break;
     }
     }
+}
+
+void MarsWindow::initNavButtons()
+{
+    QList<MarsNavButton> navButtons;
+    navButtons.append(MarsNavButton("实时预览"));
+    navButtons.append(MarsNavButton("系统设置"));
+    _titleBar->setNavButtons(navButtons);
 }
 
 qreal MarsWindow::_distance(QPoint point1, QPoint point2)

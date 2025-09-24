@@ -24,6 +24,10 @@ public:
 
     MarsTitleBarType::ButtonFlags getWindowButtonFlags() const;
 
+    void setNavButtons(const QList<MarsNavButton>& navButtons);
+
+    void setCurrentNavButton(int index);
+
 #ifdef Q_OS_WIN
     int takeOverNativeEvent(const QByteArray& eventType, void* message, qintptr* result);
 #endif
@@ -40,11 +44,13 @@ private:
     bool _containsCursorToItem(QWidget* item);
 
 private slots:
+    void onNavButtonClicked();
     void onMinButtonClicked();
     void onMaxButtonClicked();
     void onCloseButtonClicked();
 
 signals:
+    void navButtonClicked(int index);
     void themeButtonClicked();
     void closeButtonClicked();
 
@@ -64,6 +70,10 @@ private:
     int _edges {0};
     int _margins {8};
     bool _isHoverMaxButton {false};
+
+    QHBoxLayout* _navButtonLayout {nullptr};
+    QList<QToolButton*> _navButtons;
+    int _currentNavIndex {-1};
 };
 
 #endif // MARSTITLEBAR_H
