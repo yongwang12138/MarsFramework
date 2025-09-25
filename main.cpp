@@ -1,18 +1,13 @@
 #include <QApplication>
 #include "MarsWindow.h"
+#include "setting_window.h"
 
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
 
     MarsWindow window;
-    // 创建页面1 - 浅蓝色背景带文本
-    QWidget* page1 = new QWidget();
-    // 设置背景颜色
-    QPalette pal1 = page1->palette();
-    pal1.setColor(QPalette::Window, QColor(220, 230, 245)); // 浅蓝色
-    page1->setPalette(pal1);
-    page1->setAutoFillBackground(true);
+    Setting_Window* setting_winodw = new Setting_Window();
 
     // 创建页面2 - 浅粉色背景带文本和额外元素
     QWidget* page2 = new QWidget();
@@ -23,7 +18,7 @@ int main(int argc, char *argv[])
     page2->setAutoFillBackground(true);
 
     // 添加页面到主窗口
-    window.addCentralWidget(page1);
+    window.addCentralWidget(setting_winodw);
     window.addCentralWidget(page2);
     window.show();
     return a.exec();

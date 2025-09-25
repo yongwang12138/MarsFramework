@@ -9,6 +9,7 @@ class MarsText : public QLabel
     Q_OBJECT
 public:
     explicit MarsText(QWidget* parent = nullptr);
+    explicit MarsText(QString text, QWidget* parent = nullptr);
 
 private slots:
     void onThemeChanged(MarsThemeType::ThemeMode themeMode);

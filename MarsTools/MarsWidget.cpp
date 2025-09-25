@@ -4,6 +4,7 @@
 #include <QScreen>
 #include <QStyle>
 #include <QVBoxLayout>
+#include "MarsApplication.h"
 #include "MarsTheme.h"
 
 MarsWidget::MarsWidget(QWidget* parent)
@@ -138,6 +139,11 @@ void MarsWidget::onThemeReadyChange()
         break;
     }
     }
+}
+
+void MarsWidget::onThemeModeChanged()
+{
+
 }
 
 qreal MarsWidget::_distance(QPoint point1, QPoint point2)

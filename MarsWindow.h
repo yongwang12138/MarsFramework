@@ -25,6 +25,7 @@ protected:
 
 private slots:
     void onThemeReadyChange();
+    void onThemeModeChanged();
 
 private:
     void initNavButtons();

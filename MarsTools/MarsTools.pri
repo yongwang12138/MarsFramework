@@ -1,8 +1,11 @@
 INCLUDEPATH += $$PWD
 
 HEADERS += \
+    $$PWD/MarsApplication.h \
     $$PWD/MarsDef.h \
     $$PWD/MarsProperty.h \
+    $$PWD/MarsRadioButton.h \
+    $$PWD/MarsScrollPageArea.h \
     $$PWD/MarsSingleton.h \
     $$PWD/MarsText.h \
     $$PWD/MarsTheme.h \
@@ -12,6 +15,9 @@ HEADERS += \
     $$PWD/MarsWinShadowHelper.h
 
 SOURCES += \
+    $$PWD/MarsApplication.cpp \
+    $$PWD/MarsRadioButton.cpp \
+    $$PWD/MarsScrollPageArea.cpp \
     $$PWD/MarsText.cpp \
     $$PWD/MarsTheme.cpp \
     $$PWD/MarsThemeAnimationWidget.cpp \

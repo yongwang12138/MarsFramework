@@ -16,10 +16,12 @@ DESTDIR = $$PWD/../bin_win
 include(MarsTools/MarsTools.pri)
 
 HEADERS += \
-    MarsWindow.h
+    MarsWindow.h \
+    setting_window.h
 
 SOURCES += \
-    MarsWindow.cpp
+    MarsWindow.cpp \
+    setting_window.cpp
 
 # 屏蔽main函数（仅在作为库时生效）
 contains(DEFINES, MARSFRAMEWORK_LIB) {

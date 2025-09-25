@@ -9,6 +9,12 @@ MarsText::MarsText(QWidget* parent)
     connect(&mTheme, &MarsTheme::themeModeChanged, this, &MarsText::onThemeChanged);
 }
 
+MarsText::MarsText(QString text, QWidget* parent)
+    : MarsText(parent)
+{
+    setText(text);
+}
+
 void MarsText::onThemeChanged(MarsThemeType::ThemeMode themeMode)
 {
     _themeMode = themeMode;
