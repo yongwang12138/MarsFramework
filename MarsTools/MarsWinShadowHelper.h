@@ -1,5 +1,6 @@
 #ifndef MARSWINSHADOWHELPER_H
 #define MARSWINSHADOWHELPER_H
+
 #include "MarsDef.h"
 #include "MarsProperty.h"
 #include "MarsSingleton.h"
@@ -7,7 +8,6 @@
 #include <dwmapi.h>
 #include <windowsx.h>
 
-#define Win7_Origin "6.1.0"
 #define Win10_Origin "10.0.0"
 #define Win10_1809 "10.0.17763"
 #define Win10_1903 "10.0.18362"
@@ -32,7 +32,6 @@ public:
 
     void setWindowShadow(quint64 hwnd);
     void setWindowThemeMode(quint64 hwnd, bool isLightMode);
-    void setWindowDisplayMode(QWidget* widget, MarsApplicationType::WindowDisplayMode displayMode, MarsApplicationType::WindowDisplayMode lastDisplayMode);
     bool getIsCompositionEnabled() const;
     bool getIsFullScreen(const HWND hwnd);
     MONITORINFOEXW getMonitorForWindow(const HWND hwnd);

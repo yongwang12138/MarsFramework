@@ -24,7 +24,6 @@ protected:
 
 private slots:
     void onThemeReadyChange();
-    void onThemeModeChanged();
 
 private:
     qreal _distance(QPoint point1, QPoint point2);

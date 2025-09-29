@@ -4,7 +4,6 @@
 #include <QComboBox>
 #include <QHBoxLayout>
 #include <QScrollArea>
-#include "MarsApplication.h"
 #include "MarsRadioButton.h"
 #include "MarsText.h"
 #include "MarsScrollPageArea.h"
@@ -74,17 +73,17 @@ Setting_Window::Setting_Window(QWidget* parent)
     connect(displayButtonGroup, QOverload<QAbstractButton*, bool>::of(&QButtonGroup::buttonToggled), this, [=](QAbstractButton* button, bool isToggled) {
         if (isToggled)
         {
-            mApp.setWindowDisplayMode((MarsApplicationType::WindowDisplayMode)displayButtonGroup->id(button));
+            // mApp.setWindowDisplayMode((MarsApplicationType::WindowDisplayMode)displayButtonGroup->id(button));
         }
     });
-    connect(&mApp, &MarsApplication::pWindowDisplayModeChanged, this, [=]() {
-        auto button = displayButtonGroup->button(mApp.getWindowDisplayMode());
-        QRadioButton* elaRadioButton = dynamic_cast<QRadioButton*>(button);
-        if (elaRadioButton)
-        {
-            elaRadioButton->setChecked(true);
-        }
-    });
+    // connect(&mApp, &MarsApplication::pWindowDisplayModeChanged, this, [=]() {
+    //     auto button = displayButtonGroup->button(mApp.getWindowDisplayMode());
+    //     QRadioButton* elaRadioButton = dynamic_cast<QRadioButton*>(button);
+    //     if (elaRadioButton)
+    //     {
+    //         elaRadioButton->setChecked(true);
+    //     }
+    // });
     MarsScrollPageArea* micaSwitchArea = new MarsScrollPageArea(this);
     QHBoxLayout* micaSwitchLayout = new QHBoxLayout(micaSwitchArea);
     MarsText* micaSwitchText = new MarsText("窗口效果", this);

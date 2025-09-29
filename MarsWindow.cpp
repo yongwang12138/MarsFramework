@@ -4,7 +4,6 @@
 #include <QScreen>
 #include <QStyle>
 #include <QVBoxLayout>
-#include "MarsApplication.h"
 #include "MarsTheme.h"
 
 MarsWindow::MarsWindow(QWidget* parent)
@@ -14,6 +13,7 @@ MarsWindow::MarsWindow(QWidget* parent)
     setWindowIcon(style()->standardIcon(QStyle::SP_ComputerIcon));
     setWindowTitle("MarsWindow框架");
     setObjectName("MarsWindow");
+    setStyleSheet("#MarsWindow{background-color:transparent;}");
     // setAttribute(Qt::WA_TranslucentBackground);
 
 
@@ -39,11 +39,6 @@ MarsWindow::MarsWindow(QWidget* parent)
         update();
     });
     connect(_titleBar, &MarsTitleBar::themeButtonClicked, this, &MarsWindow::onThemeReadyChange);
-
-    mApp.syncWindowDisplayMode(this);
-    connect(&mApp, &MarsApplication::pWindowDisplayModeChanged, this, [=]() {
-        onThemeModeChanged();
-    });
 	
 	// 导航按钮
     initNavButtons();
@@ -150,28 +145,6 @@ void MarsWindow::onThemeReadyChange()
         break;
     }
     }
-}
-
-void MarsWindow::onThemeModeChanged()
-{
-    switch (mApp.getWindowDisplayMode())
-    {
-    case MarsApplicationType::Normal:
-    {
-        QPalette palette;
-        palette.setBrush(QPalette::Window, mTheme.getThemeColor(_themeMode, MarsThemeType::WindowBase));
-        setPalette(palette);
-        break;
-    }
-    default:
-    {
-        QPalette palette;
-        palette.setBrush(QPalette::Window, Qt::transparent);
-        setPalette(palette);
-        break;
-    }
-    }
-    update();
 }
 
 void MarsWindow::initNavButtons()
