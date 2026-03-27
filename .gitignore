@@ -1,0 +1,69 @@
+﻿# Build directories
+build/
+build-*/
+cmake-build-*/
+
+# CMake generated files
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+CTestTestfile.cmake
+compile_commands.json
+Makefile
+
+# Qt/CMake helper dirs
+.cmake/
+.generated/
+.qt/
+.qtc/
+.qtc_clangd/
+.qt_plugins/
+.rcc/
+meta_types/
+qmltypes/
+Testing/
+
+# Qt Creator user-specific
+*.pro.user
+*.pro.user.*
+*.qbs.user
+*.qtc.user
+CMakeLists.txt.user
+
+# Binaries and libraries
+*.exe
+*.dll
+*.so
+*.dylib
+*.a
+*.lib
+*.obj
+*.o
+*.pdb
+
+# Auto-generated Qt files
+moc_*.cpp
+moc_*.h
+qrc_*.cpp
+ui_*.h
+*_qmltyperegistrations.cpp
+
+# Runtime output folders
+bin_win64/
+bin_linux_x64/
+bin_linux_arm64/
+**/bin_win64/
+**/bin_linux_x64/
+**/bin_linux_arm64/
+**/package_win64/
+**/package_linux_x64/
+**/package_linux_arm64/
+
+# Logs and temp
+*.log
+*.tmp
+*.cache
+
+# OS files
+.DS_Store
+Thumbs.db
