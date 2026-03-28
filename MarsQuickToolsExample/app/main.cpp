@@ -19,7 +19,7 @@ int main(int argc, char* argv[])
     importCandidates << QDir(QCoreApplication::applicationDirPath()).filePath("../modules");
     importCandidates << QDir(QCoreApplication::applicationDirPath()).filePath("../../modules");
 
-    for (const QString& path : importCandidates) {
+    for (const auto& path : std::as_const(importCandidates)) {
         if (QDir(path).exists()) {
             engine.addImportPath(path);
         }

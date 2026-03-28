@@ -1,71 +1,75 @@
-﻿# C++ 代码规范（ElaQuickTools）
+﻿# C++/QML 代码规范（MarsFramework）
 
-本规范用于约束本项目的 C++/Qt 代码风格，目标是现代 C++、可维护、可扩展。
-后续可持续追加新规则；新规则默认对新代码生效，重构时逐步落地到旧代码。
+本规范用于约束 `MarsQuickTools` 与 `MarsQuickToolsExample` 的开发风格，目标是：
+
+- 现代 C++
+- Qt6 标准写法
+- 高可读、可维护、可扩展
+
+后续规则可以增量追加，新代码必须遵守，旧代码在触达时逐步整理。
 
 ## 1. 命名规范
 
-- 类名：`PascalCase`，如 `FramelessWindowAgent`。
-- 函数名：`camelCase`，如 `setTitleBarHeight()`。
-- 局部变量：`camelCase`，如 `targetHwnd`。
-- 成员变量：`小写 + 下划线后缀`，如 `title_bar_height_`、`window_`。
-- 常量：`kPascalCase`，如 `kDefaultBorderThickness`。
-- 宏：仅在必须时使用，全大写下划线。
+- 类名：`PascalCase`，如 `FramelessWindowAgent`
+- 函数名：`camelCase`，如 `setTitleBarHeight()`
+- 局部变量：`camelCase`
+- 成员变量：`snake_case_`，如 `title_bar_height_`
+- 常量：`kPascalCase`
+- QML 文件名：`PascalCase.qml`，如 `MarsApplicationWindow.qml`
+- QML id：`camelCase`
 
 ## 2. 指针与引用
 
-- 指针/引用符号靠类型，不靠变量名：
-  - `QObject* obj`（正确）
-  - `QObject *obj`（不使用）
-- 能用引用就不用裸指针。
-- Qt 对象优先使用父子对象管理生命周期；跨对象引用优先 `QPointer<T>`。
+- 指针符号跟类型：`Type* ptr`
+- 优先引用，其次智能/受管指针，再考虑裸指针
+- Qt 对象优先父子关系管理生命周期
+- 跨对象悬垂风险场景优先 `QPointer<T>`
 
 ## 3. 初始化与构造
 
-- 成员变量初始化统一使用 `{}`。
-- 优先在声明处给默认值，在构造函数中只处理必要逻辑。
-- 单参数构造函数默认 `explicit`。
-- 禁止未初始化成员。
+- 成员初始化统一 `{}`
+- 优先在声明处给默认值
+- 单参数构造默认 `explicit`
+- 禁止未初始化成员
 
 ## 4. 现代 C++ 实践
 
-- 优先使用 `nullptr`，禁止 `NULL`/`0` 代表空指针。
-- 能 `const` 就 `const`；只读接口优先 `const` 成员函数。
-- 能 `override` 必须 `override`。
-- 使用范围 `for`、`auto`（仅在可读性不下降时）。
-- 优先早返回，减少嵌套层级。
+- 使用 `nullptr`，禁用 `NULL`/`0` 空指针语义
+- 能 `const` 就 `const`
+- 覆写函数必须 `override`
+- 适度使用 `auto`（不牺牲可读性）
+- 优先早返回，减少嵌套
 
-## 5. Qt/跨平台约定
+## 5. Qt/QML 约定
 
-- 平台分支使用 `#ifdef Q_OS_WIN` 等宏，分支最小化。
-- Windows 原生消息处理仅放在平台实现层，不污染通用业务层。
-- QML 暴露对象应保持窄接口：只暴露必要 `Q_PROPERTY`/`Q_INVOKABLE`。
+- 以 Qt6 API 为准，不引入 Qt5 兼容模块实现核心能力
+- 平台分支最小化，使用 `Q_OS_WIN` / `Q_OS_LINUX` 等宏
+- QML 对外接口保持窄接口：仅暴露必要 `Q_PROPERTY` / `Q_INVOKABLE`
+- 主题和关键转场优先使用 C++ 可控实现（当前为 `ThemeRevealOverlay`），保证跨屏缩放一致性
+- 避免在高频路径使用大开销 JavaScript 逻辑
 
-## 6. 错误处理与日志
+## 6. CMake 约定
 
-- 对外部输入做参数校验，失败时快速返回。
-- 调试日志使用 `qWarning()`/`qDebug()`，避免无意义日志噪声。
-- 不吞异常状态；可恢复错误需显式处理或注释说明。
+- 最低版本 `3.21`
+- 统一 `C++17`
+- 依赖通过 `find_package(Qt6 ... REQUIRED)` 显式声明
+- QML 模块统一使用 `qt_add_qml_module`
+- Shader 资源统一使用 `qt_add_shaders`
 
-## 7. 提交要求（代码层面）
+## 7. 注释与文档
 
-- 新增/修改代码必须符合本规范。
-- 旧代码不强制一次性重写；触达时顺手修正。
-- 评审重点：命名、初始化、生命周期、跨平台边界。
+- 对复杂逻辑写“为什么”的注释，不写“做了什么”的废话注释
+- 公开接口（类、关键函数、QML 组件）应有简短中文说明
+- 文档（README/规则）与代码改动同步更新
 
-## 8. 渐进升级计划（可按阶段启用）
+## 8. 提交前自检
 
-- 阶段 A（当前）
-  - 命名统一
-  - 初始化统一 `{}`
-  - 指针样式统一 `Type* var`
-- 阶段 B
-  - 对关键类补拷贝/移动语义约束（`Q_DISABLE_COPY_MOVE` 或显式 `=delete`）
-  - 补充 clang-format 配置并自动化
-- 阶段 C
-  - 补充 clang-tidy 规则（modernize/readability/performance）
-  - 引入最小单测模板
+- 能编译通过（至少 Debug）
+- 无新增关键警告
+- 变更涉及的 QML 页面可正常加载
+- 规则文档与行为保持一致
 
 ---
 
-如果与 Qt 官方 API 风格冲突，以“可读性 + 团队一致性 + Qt 生态兼容”三者平衡为准。
+如与 Qt 官方推荐实践冲突，以“Qt 官方 + 团队一致性 + 可维护性”三者平衡为准。
+

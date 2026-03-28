@@ -1,6 +1,9 @@
 ﻿import QtQuick
 import QtQuick.Window
 
+// WindowResizeHandles：
+// 在非 Windows 平台补充边缘缩放热区。
+// Windows 下由 FramelessWindowAgent 的原生命中测试负责缩放，一般会禁用本组件。
 Item {
     id: root
 

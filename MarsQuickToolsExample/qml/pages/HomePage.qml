@@ -11,7 +11,7 @@ Item {
         height: 260
         radius: Theme.radiusM
         color: Theme.card
-        border.color: "#E5E7EB"
+        border.color: Theme.windowBorder
 
         Column {
             anchors.fill: parent

@@ -2,6 +2,9 @@
 import QtQuick.Window
 import MarsQuickTools
 
+// WindowTitleBar：
+// 统一标题栏组件，负责：
+// 1) 窗口拖动/双击最大化；2) 系统按钮；3) 主题切换按钮事件上抛。
 Rectangle {
     id: root
 
@@ -9,6 +12,9 @@ Rectangle {
     property var windowAgent: null
     property string titleText: ""
     readonly property int dragRegionRight: controlButtons.x
+
+    // 发出主题切换请求，并携带按钮点击点（窗口坐标）。
+    signal themeToggleRequested(real x, real y)
 
     height: Theme.titleBarHeight
     color: Theme.titleBarBg
@@ -77,16 +83,30 @@ Rectangle {
         anchors.bottom: parent.bottom
         spacing: 0
 
+        // 白天/黑夜切换按钮
+        SystemTitleButton {
+            id: themeButton
+            label: Theme.isDark ? "\u2600" : "\u263E"
+            onClicked: function(x, y) {
+                const point = themeButton.mapToItem(root.targetWindow.contentItem, x, y)
+                root.themeToggleRequested(point.x, point.y)
+            }
+        }
+
         // 最小化按钮
         SystemTitleButton {
             label: "\u2014"
-            onClicked: root.windowAgent ? root.windowAgent.minimize() : root.targetWindow.showMinimized()
+            onClicked: function() {
+                root.windowAgent ? root.windowAgent.minimize() : root.targetWindow.showMinimized()
+            }
         }
 
         // 最大化/还原按钮
         SystemTitleButton {
             label: root.targetWindow.visibility === Window.Maximized ? "\u2750" : "\u2610"
-            onClicked: root.toggleMaximize()
+            onClicked: function() {
+                root.toggleMaximize()
+            }
         }
 
         // 关闭按钮
@@ -95,7 +115,9 @@ Rectangle {
             hoverColor: Theme.titleButtonCloseHover
             pressedColor: Theme.titleButtonClosePressed
             hoverForegroundColor: "#FFFFFF"
-            onClicked: root.windowAgent ? root.windowAgent.closeWindow() : root.targetWindow.close()
+            onClicked: function() {
+                root.windowAgent ? root.windowAgent.closeWindow() : root.targetWindow.close()
+            }
         }
     }
 }

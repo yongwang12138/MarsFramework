@@ -1,6 +1,8 @@
 ﻿import QtQuick
 import MarsQuickTools
 
+// SystemTitleButton：标题栏系统按钮基类。
+// 最小化、最大化、关闭、亮暗切换按钮都复用该组件。
 Rectangle {
     id: root
 
@@ -11,7 +13,7 @@ Rectangle {
     property color foregroundColor: Theme.titleBarText
     property color hoverForegroundColor: foregroundColor
 
-    signal clicked
+    signal clicked(real x, real y)
 
     implicitWidth: 46
     implicitHeight: 32
@@ -29,6 +31,8 @@ Rectangle {
         id: mouseArea
         anchors.fill: parent
         hoverEnabled: true
-        onClicked: root.clicked()
+        onClicked: function(mouse) {
+            root.clicked(mouse.x, mouse.y)
+        }
     }
 }

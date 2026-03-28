@@ -29,9 +29,9 @@ if (DEFINED OUTPUT_DIR)
     endforeach()
 endif()
 
-find_package(Qt6 6.5 REQUIRED COMPONENTS Quick Qml)
+find_package(Qt6 6.8.3 REQUIRED COMPONENTS Quick Qml)
 
-qt_standard_project_setup(REQUIRES 6.5)
+qt_standard_project_setup(REQUIRES 6.8.3)
 
 qt_add_executable(MarsQuickToolsExample
     app/main.cpp
@@ -58,3 +58,4 @@ target_link_libraries(MarsQuickToolsExample
 
 qt_import_qml_plugins(MarsQuickToolsExample)
 qt_finalize_executable(MarsQuickToolsExample)
+

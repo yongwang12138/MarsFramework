@@ -1,0 +1,7 @@
+﻿# components 子模块导出表：定义可被 import MarsQuickTools 直接使用的组件
+prefer :/qt/qml/MarsQuickTools/qml/components
+AppButton 1.0 AppButton.qml
+SystemTitleButton 1.0 SystemTitleButton.qml
+WindowTitleBar 1.0 WindowTitleBar.qml
+WindowResizeHandles 1.0 WindowResizeHandles.qml
+MarsApplicationWindow 1.0 MarsApplicationWindow.qml

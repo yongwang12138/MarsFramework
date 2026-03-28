@@ -1,0 +1,3 @@
+﻿# theme 子模块导出表：Theme 单例
+prefer :/qt/qml/MarsQuickTools/qml/theme
+singleton Theme 1.0 Theme.qml
