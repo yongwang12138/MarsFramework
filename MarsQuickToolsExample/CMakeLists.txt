@@ -5,6 +5,12 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+# ===================== 1. 手动指定 SDK 路径（核心） =====================
+set(SDK_DIR "${CMAKE_CURRENT_SOURCE_DIR}/sdk")
+set(SDK_BIN     "${SDK_DIR}/bin")
+set(SDK_LIB     "${SDK_DIR}/lib")
+set(SDK_INCLUDE "${SDK_DIR}/include")
+
 if (WIN32)
     set(OUTPUT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/bin_win64")
 elseif(UNIX AND NOT APPLE)
@@ -45,11 +51,21 @@ qt_add_qml_module(MarsQuickToolsExample
         qml/pages/HomePage.qml
 )
 
+# 链接库（优先动态库，MinGW 下 .a 是导入库）
+target_link_directories(MarsQuickToolsExample
+    PRIVATE
+        ${SDK_LIB}
+)
+
 target_link_libraries(MarsQuickToolsExample
     PRIVATE
         Qt6::Quick
         Qt6::Qml
+        MarsQuickTools
 )
+
+# 让 QML 编译器找到模块（实现提示/跳转/检查）
+set(QML_IMPORT_PATH "${SDK_BIN}" CACHE STRING "QML import path")
 
 qt_import_qml_plugins(MarsQuickToolsExample)
 qt_finalize_executable(MarsQuickToolsExample)
