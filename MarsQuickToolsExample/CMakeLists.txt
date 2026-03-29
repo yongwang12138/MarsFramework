@@ -45,11 +45,6 @@ qt_add_qml_module(MarsQuickToolsExample
         qml/pages/HomePage.qml
 )
 
-target_compile_definitions(MarsQuickToolsExample
-    PRIVATE
-        MARS_QUICKTOOLS_MODULE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/modules"
-)
-
 target_link_libraries(MarsQuickToolsExample
     PRIVATE
         Qt6::Quick

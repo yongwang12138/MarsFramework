@@ -8,10 +8,10 @@ project(MarsQuickTools VERSION 1.0.0 LANGUAGES CXX)
 # 3) 同时编译 C++ 类型并导出给 QML（FramelessWindowAgent / ThemeRevealOverlay 等）
 # ============================================================
 
-# 项目名（模块名）统一变量，后续改名只改 project 即可。
+# 项目名（模块名）统一变量
 set(MARS_MODULE_NAME ${PROJECT_NAME})
 
-# 设置 C++ 标准：强制使用 C++17。
+# 设置 C++ 标准：强制使用 C++17
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -21,49 +21,49 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # Linux x64 -> bin_linux_x64/MarsQuickTools
 # Linux arm64 -> bin_linux_arm64/MarsQuickTools
 if (WIN32)
-    set(OUTPUT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/bin_win64/${MARS_MODULE_NAME}")
+    set(ROOT_BIN_DIR "${CMAKE_CURRENT_SOURCE_DIR}/bin_win64")
 elseif(UNIX AND NOT APPLE)
     string(TOLOWER "${CMAKE_SYSTEM_PROCESSOR}" SYSTEM_ARCH_LOWER)
     if (SYSTEM_ARCH_LOWER MATCHES "^(aarch64|arm64)")
-        set(OUTPUT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/bin_linux_arm64/${MARS_MODULE_NAME}")
+        set(ROOT_BIN_DIR "${CMAKE_CURRENT_SOURCE_DIR}/bin_linux_arm64")
     else()
-        set(OUTPUT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/bin_linux_x64/${MARS_MODULE_NAME}")
+        set(ROOT_BIN_DIR "${CMAKE_CURRENT_SOURCE_DIR}/bin_linux_x64")
     endif()
 endif()
 
-# 将所有类型产物（exe/dll/a）统一放到 OUTPUT_DIR，避免 Debug/Release 分散难找。
-if (DEFINED OUTPUT_DIR)
-    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${OUTPUT_DIR}")
-    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${OUTPUT_DIR}")
-    set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${OUTPUT_DIR}")
+# QML 模块目录（plugin + qmldir + qmltypes 必须放这里）
+set(QML_MODULE_DIR "${ROOT_BIN_DIR}/${MARS_MODULE_NAME}")
+set(SDK_DIR "${CMAKE_CURRENT_SOURCE_DIR}/sdk")
 
-    foreach(cfg IN ITEMS Debug Release RelWithDebInfo MinSizeRel)
-        string(TOUPPER "${cfg}" cfg_upper)
-        set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_${cfg_upper} "${OUTPUT_DIR}")
-        set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_${cfg_upper} "${OUTPUT_DIR}")
-        set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_${cfg_upper} "${OUTPUT_DIR}")
-    endforeach()
-endif()
+# 核心库 dll 输出到 ROOT_BIN_DIR
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${ROOT_BIN_DIR}")
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${ROOT_BIN_DIR}")
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${ROOT_BIN_DIR}")
 
-# Qt 依赖：Quick + Qml。
+# 所有编译版本都输出到同一目录 避免 Debug/Release 分散
+foreach(cfg IN ITEMS Debug Release RelWithDebInfo MinSizeRel)
+    string(TOUPPER "${cfg}" cfg_upper)
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_${cfg_upper} "${ROOT_BIN_DIR}")
+    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_${cfg_upper} "${ROOT_BIN_DIR}")
+    set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_${cfg_upper} "${ROOT_BIN_DIR}")
+endforeach()
+
+# ===================== Qt 模块 =====================
 find_package(Qt6 6.8.3 REQUIRED COMPONENTS Quick Qml)
 qt_standard_project_setup(REQUIRES 6.8.3)
-
 # Qt 官方推荐：含额外 QML 子目录时启用 QTP0004 NEW，避免策略警告。
 qt_policy(SET QTP0004 NEW)
 
-# 声明 Theme.qml 为单例（import 后可直接 Theme.xxx）。
+# 声明 Theme.qml 为单例
 set_source_files_properties(qml/theme/Theme.qml PROPERTIES
     QT_QML_SINGLETON_TYPE TRUE
 )
 
-# 定义 QML 模块：
-# - URI 决定 import 名称（import MarsQuickTools）
-# - OUTPUT_DIRECTORY 决定模块文件最终落盘目录
+# QML 模块： URI 决定 import 名称（import MarsQuickTools）
 qt_add_qml_module(${MARS_MODULE_NAME}
     URI ${MARS_MODULE_NAME}
     VERSION 1.0
-    OUTPUT_DIRECTORY "${OUTPUT_DIR}"
+    OUTPUT_DIRECTORY "${QML_MODULE_DIR}"  # 插件输出到子目录
     SOURCES
         src/appcontroller.cpp
         src/appcontroller.h
@@ -78,20 +78,60 @@ qt_add_qml_module(${MARS_MODULE_NAME}
         qml/components/WindowResizeHandles.qml
         qml/components/MarsApplicationWindow.qml
         qml/theme/Theme.qml
-    RESOURCES
-        qml/components/qmldir
-        qml/theme/qmldir
+    # RESOURCES
+    #     qml/components/qmldir
+    #     qml/theme/qmldir
 )
 
-# 对外暴露 C++ 头文件路径（供同工程其他 target include）。
+# 对外暴露 C++ 头文件路径
 target_include_directories(${MARS_MODULE_NAME}
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
-# 链接 Qt 运行时。
+# 链接 Qt 运行时
 target_link_libraries(${MARS_MODULE_NAME}
     PUBLIC
         Qt6::Quick
         Qt6::Qml
+)
+
+# ===================== 【自动移动插件和清理冗余文件】 =====================
+add_custom_command(
+    TARGET ${MARS_MODULE_NAME}plugin
+    POST_BUILD
+    # 1. 确保模块目录存在
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${QML_MODULE_DIR}"
+    # 2. 移动插件到模块目录（外面不留）
+    COMMAND ${CMAKE_COMMAND} -E rename
+        "$<TARGET_FILE:${MARS_MODULE_NAME}plugin>"
+        "${QML_MODULE_DIR}/$<TARGET_FILE_NAME:${MARS_MODULE_NAME}plugin>"
+    COMMENT "=> 插件已移动到模块目录，外部无残留"
+    # 3. 删除冗余qrc文件
+    COMMAND ${CMAKE_COMMAND} -E remove -f
+        "${QML_MODULE_DIR}/${MARS_MODULE_NAME}_qml_module_dir_map.qrc"
+    # 4. 删除qml源码文件夹（隐藏源码）
+    COMMAND ${CMAKE_COMMAND} -E remove_directory
+        "${QML_MODULE_DIR}/qml"
+    COMMENT "=> 已自动清理冗余文件，仅保留运行必需文件"
+)
+
+# ===================== ✅ 自动复制到 SDK（自动执行，无需操作） =====================
+add_custom_command(
+    TARGET ${MARS_MODULE_NAME}
+    POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${SDK_DIR}/bin"
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${SDK_DIR}/lib"
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${SDK_DIR}/include"
+
+    # 复制运行库
+    COMMAND ${CMAKE_COMMAND} -E copy_directory "${ROOT_BIN_DIR}" "${SDK_DIR}/bin"
+
+    # 复制链接库 .a
+    COMMAND ${CMAKE_COMMAND} -E copy "${ROOT_BIN_DIR}/lib${MARS_MODULE_NAME}.a" "${SDK_DIR}/lib"
+
+    # 复制头文件
+    COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/src" "${SDK_DIR}/include"
+
+    COMMENT "✅ 自动打包完成：sdk 目录已生成"
 )
