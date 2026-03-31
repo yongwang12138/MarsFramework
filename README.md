@@ -30,6 +30,24 @@ MarsFramework/
 - C++17
 - Qt 组件：`Quick`、`Qml`
 
+## 0. 顶层聚合工程（可选）
+
+仓库根目录新增了顶层 `CMakeLists.txt`，用途是：
+
+- 在一个 CMake 工程中同时打开 `MarsQuickTools` 与 `MarsQuickToolsExample`
+- 构建时分别构建两个子工程
+- 运行时默认目标为 `MarsQuickToolsExample`（可用 `run_example` 便捷目标）
+
+示例命令：
+
+```powershell
+cmake -S . -B build-MarsFramework
+cmake --build build-MarsFramework --config Debug --target MarsFrameworkAll
+cmake --build build-MarsFramework --config Debug --target run_example
+```
+
+说明：两个子工程原有的独立构建方式保持不变，仍可按下文步骤单独构建。
+
 ## 1. 构建 MarsQuickTools（库）
 
 ```powershell
@@ -66,9 +84,9 @@ cmake --build build-MarsQuickToolsExample --config Debug
 
 输出目录（按平台）：
 
-- Windows: `MarsQuickToolsExample/bin_win64`
-- Linux x64: `MarsQuickToolsExample/bin_linux_x64`
-- Linux arm64: `MarsQuickToolsExample/bin_linux_arm64`
+- Windows: `MarsQuickToolsExample/bin/marsquicktoolsexample-windows-amd64`
+- Linux amd64: `MarsQuickToolsExample/bin/marsquicktoolsexample-linux-amd64`
+- Linux arm64: `MarsQuickToolsExample/bin/marsquicktoolsexample-linux-arm64`
 
 ## 4. Example 如何识别 MarsQuickTools
 

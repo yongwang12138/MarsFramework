@@ -12,7 +12,7 @@ import MarsQuickTools
 ApplicationWindow {
     id: root
 
-    // 对外配置：窗口标题、页面内容、主题揭幕动画时长（毫秒）。
+    // 对外配置：窗口标题、页面内容、主题揭幕动画时长（毫秒）
     property string windowTitle: ""
     property Component page
     property int themeRevealDurationMs: 500
@@ -79,13 +79,13 @@ ApplicationWindow {
         z: 9999
 
         onPrepared: {
-            // 第二步：覆盖层就绪后再切主题；第三步：执行揭幕扩散动画。
+            // 第二步：覆盖层就绪后再切主题；第三步：执行揭幕扩散动画
             Theme.toggleMode()
             themeRevealOverlay.reveal(root.themeRevealDurationMs)
         }
     }
 
-    // 非 Windows 下，补充 QML 侧缩放热区。
+    // 非 Windows 下，补充 QML 侧缩放热区
     WindowResizeHandles {
         targetWindow: root
         enabledResize: Qt.platform.os !== "windows"

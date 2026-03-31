@@ -68,6 +68,4 @@ bin_linux_arm64/
 .DS_Store
 Thumbs.db
 
-# Runtime copied QML module package (do not commit)
-MarsQuickToolsExample/modules/
-
+bin/

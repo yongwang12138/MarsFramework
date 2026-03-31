@@ -16,24 +16,24 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# ===================== 输出到 deploy =====================
-set(DEPLOY_DIR      "${CMAKE_CURRENT_SOURCE_DIR}/deploy")
-set(DEPLOY_BIN      "${DEPLOY_DIR}/bin")
-set(DEPLOY_LIB      "${DEPLOY_DIR}/lib")
-set(DEPLOY_INCLUDE  "${DEPLOY_DIR}/include")
-set(MODULE_DIR      "${DEPLOY_BIN}/${MARS_MODULE_NAME}")
+# ===================== 输出到 plugins =====================
+set(PLUGINS_DIR      "${CMAKE_CURRENT_SOURCE_DIR}/plugins")
+set(PLUGINS_BIN      "${PLUGINS_DIR}/bin")
+set(PLUGINS_LIB      "${PLUGINS_DIR}/lib")
+set(PLUGINS_INCLUDE  "${PLUGINS_DIR}/include")
+set(MODULE_DIR      "${PLUGINS_BIN}/${MARS_MODULE_NAME}")
 
 # 核心库 dll 输出到 SDK/bin
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${DEPLOY_BIN})
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${DEPLOY_BIN})
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${DEPLOY_LIB})
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PLUGINS_BIN})
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PLUGINS_BIN})
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PLUGINS_LIB})
 
 # 所有编译版本都输出到同一目录 避免 Debug/Release 分散
 foreach(cfg IN ITEMS Debug Release RelWithDebInfo MinSizeRel)
     string(TOUPPER "${cfg}" cfg_upper)
-    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_${cfg_upper} "${DEPLOY_BIN}")
-    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_${cfg_upper} "${DEPLOY_BIN}")
-    set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_${cfg_upper} "${DEPLOY_LIB}")
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_${cfg_upper} "${PLUGINS_BIN}")
+    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_${cfg_upper} "${PLUGINS_BIN}")
+    set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_${cfg_upper} "${PLUGINS_LIB}")
 endforeach()
 
 # ===================== Qt 模块 =====================
@@ -107,6 +107,6 @@ add_custom_command(
 # ===================== 自动复制头文件 =====================
 add_custom_command(
     TARGET ${MARS_MODULE_NAME} POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/src" ${DEPLOY_INCLUDE}
-    COMMENT "=> 发布完成：${DEPLOY_DIR}"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/src" ${PLUGINS_INCLUDE}
+    COMMENT "=> 发布完成：${PLUGINS_DIR}"
 )
