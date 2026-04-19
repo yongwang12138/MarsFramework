@@ -1,8 +1,8 @@
 ﻿pragma Singleton
 import QtQuick
 
-// Theme：模块级主题单例。
-// 统一管理亮暗模式、颜色、圆角、间距、动效时长等设计令牌。
+// Theme：模块级主题单例
+// 统一管理亮暗模式、颜色、圆角、间距、动效时长等设计令牌
 QtObject {
     property bool isDark: false
 

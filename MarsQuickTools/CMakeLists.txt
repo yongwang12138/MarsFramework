@@ -66,7 +66,9 @@ qt_add_qml_module(${MARS_MODULE_NAME}
         qml/components/WindowResizeHandles.qml
         qml/components/MarsApplicationWindow.qml
         qml/theme/Theme.qml
-    # RESOURCES
+    RESOURCES
+        resources/fonts.qrc
+        resources/iconfont.ttf
     #     qml/components/qmldir
     #     qml/theme/qmldir
 )

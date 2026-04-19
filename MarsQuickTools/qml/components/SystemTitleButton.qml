@@ -1,8 +1,8 @@
 ﻿import QtQuick
 import MarsQuickTools
 
-// SystemTitleButton：标题栏系统按钮基类。
-// 最小化、最大化、关闭、亮暗切换按钮都复用该组件。
+// SystemTitleButton：标题栏系统按钮基类
+// 最小化、最大化、关闭、亮暗切换按钮都复用该组件
 Rectangle {
     id: root
 

@@ -2,8 +2,8 @@
 import QtQuick.Controls
 import MarsQuickTools
 
-// AppButton：模块内通用主按钮。
-// 主要用于示例页和业务页面中的“主操作”按钮。
+// AppButton：模块内通用主按钮
+// 主要用于示例页和业务页面中的“主操作”按钮
 Rectangle {
     id: root
 

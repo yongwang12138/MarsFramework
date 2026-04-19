@@ -13,7 +13,7 @@ FramelessWindowAgent::FramelessWindowAgent(QObject* parent)
     : QObject(parent)
 {
 #ifdef Q_OS_WIN
-    // Windows 下拦截原生消息，用于实现无边框命中测试和系统行为接管。
+    // Windows 下拦截原生消息，用于实现无边框命中测试和系统行为接管
     QCoreApplication::instance()->installNativeEventFilter(this);
 #endif
 }
@@ -87,7 +87,7 @@ void FramelessWindowAgent::attach(QObject* windowObject)
         ensureNativeWindowStyle();
     });
 
-    // 延迟一帧，避免窗口刚创建时重复改样式导致重入。
+    // 延迟一帧，避免窗口刚创建时重复改样式导致重入
     QTimer::singleShot(0, this, [this]() {
         ensureNativeWindowStyle();
     });
@@ -176,7 +176,7 @@ bool FramelessWindowAgent::nativeEventFilter(const QByteArray& eventType, void* 
 
     switch (msg->message) {
     case WM_NCCALCSIZE: {
-        // 接管非客户区计算，形成真正的无边框窗口。
+        // 接管非客户区计算，形成真正的无边框窗口
         if (msg->wParam) {
             *result = 0;
             return true;
@@ -184,7 +184,7 @@ bool FramelessWindowAgent::nativeEventFilter(const QByteArray& eventType, void* 
         return false;
     }
     case WM_NCHITTEST: {
-        // 命中测试：判断鼠标处在缩放边框、标题栏拖拽区还是客户区。
+        // 命中测试：判断鼠标处在缩放边框、标题栏拖拽区还是客户区
         if (window()->visibility() == QWindow::FullScreen) {
             return false;
         }
@@ -203,7 +203,7 @@ bool FramelessWindowAgent::nativeEventFilter(const QByteArray& eventType, void* 
         const bool top = y < windowRect.top + border;
         const bool bottom = y >= windowRect.bottom - border;
 
-        // 最大化时禁用边框缩放，行为与原生窗口保持一致。
+        // 最大化时禁用边框缩放，行为与原生窗口保持一致
         if (!isMaximized) {
             if (top && left) {
                 *result = HTTOPLEFT;
@@ -242,12 +242,12 @@ bool FramelessWindowAgent::nativeEventFilter(const QByteArray& eventType, void* 
         POINT localPos{x, y};
         ::ScreenToClient(hwnd, &localPos);
 
-        // 标题栏拖拽范围只到系统按钮左侧，避免右侧按钮区域“抢拖拽”。
+        // 标题栏拖拽范围只到系统按钮左侧，避免右侧按钮区域“抢拖拽”
         const int dragRight = drag_region_right_ > 0 ? drag_region_right_ : window()->width();
         const int dragRightNative = qRound(dragRight * dpr);
         const int titleBarHeightNative = qRound(title_bar_height_ * dpr);
         if (localPos.y >= 0 && localPos.y < titleBarHeightNative && localPos.x >= 0 && localPos.x < dragRightNative) {
-            // 返回 HTCAPTION 后，系统自动处理拖动、贴靠、最大化还原等原生行为。
+            // 返回 HTCAPTION 后，系统自动处理拖动、贴靠、最大化还原等原生行为
             *result = HTCAPTION;
             return true;
         }
@@ -287,7 +287,7 @@ void FramelessWindowAgent::ensureNativeWindowStyle()
         return;
     }
 
-    // 保留必要系统样式位，确保 Snap、最小化、最大化等行为完整可用。
+    // 保留必要系统样式位，确保 Snap、最小化、最大化等行为完整可用
     LONG_PTR style = ::GetWindowLongPtrW(hwnd, GWL_STYLE);
     style |= WS_CAPTION;
     style |= WS_THICKFRAME;

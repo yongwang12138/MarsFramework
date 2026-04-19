@@ -4,11 +4,11 @@ import QtQuick.Window
 import MarsQuickTools
 
 // MarsApplicationWindow：
-// 模块封装后的主窗口基类。
+// 模块封装后的主窗口基类
 // 使用者只需设置 windowTitle/page，即可获得：
-// 1) 无边框窗口 + 原生控制能力；
-// 2) 统一标题栏；
-// 3) 亮暗主题切换与圆形揭幕动画。
+// 1) 无边框窗口 + 原生控制能力
+// 2) 统一标题栏
+// 3) 亮暗主题切换与圆形揭幕动画
 ApplicationWindow {
     id: root
 
@@ -55,7 +55,7 @@ ApplicationWindow {
                 windowAgent: framelessAgent
                 titleText: root.windowTitle
                 onThemeToggleRequested: function(x, y) {
-                    // 第一步：先生成并展示“旧主题截图覆盖层”。
+                    // 第一步：先生成并展示“旧主题截图覆盖层”
                     themeRevealOverlay.prepare(root, x, y)
                 }
             }

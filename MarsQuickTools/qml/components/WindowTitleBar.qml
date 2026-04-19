@@ -4,7 +4,7 @@ import MarsQuickTools
 
 // WindowTitleBar：
 // 统一标题栏组件，负责：
-// 1) 窗口拖动/双击最大化；2) 系统按钮；3) 主题切换按钮事件上抛。
+// 1) 窗口拖动/双击最大化；2) 系统按钮；3) 主题切换按钮事件上抛
 Rectangle {
     id: root
 
@@ -13,7 +13,7 @@ Rectangle {
     property string titleText: ""
     readonly property int dragRegionRight: controlButtons.x
 
-    // 发出主题切换请求，并携带按钮点击点（窗口坐标）。
+    // 发出主题切换请求，并携带按钮点击点（窗口坐标）
     signal themeToggleRequested(real x, real y)
 
     height: Theme.titleBarHeight
